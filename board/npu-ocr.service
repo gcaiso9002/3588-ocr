@@ -1,0 +1,13 @@
+[Unit]
+Description=PP-OCRv4 NPU OCR service (RKNN on the RK3588 NPU)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -u /opt/npu-ocr/npu_ocr_server.py
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

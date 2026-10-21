@@ -1,0 +1,5 @@
+#!/bin/sh
+# PP-OCRv4 (PaddleOCR) on the RK3588 NPU via RKNN.
+# RKNN_LOG_LEVEL=0 silences the runtime's info banner.
+export RKNN_LOG_LEVEL="${RKNN_LOG_LEVEL:-0}"
+exec python3 -u /opt/npu-ocr/npu_ocr.py "$@"

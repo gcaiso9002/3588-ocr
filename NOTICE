@@ -1,0 +1,30 @@
+npu-ocr
+Copyright 2026 npu-ocr contributors
+
+This product includes software developed as part of the following projects:
+
+--------------------------------------------------------------------------------
+RapidOCR  (https://github.com/RapidAI/RapidOCR)
+--------------------------------------------------------------------------------
+The DB post-processing and CTC decoding logic in `board/npu_ocr.py` follows
+RapidOCR's semantics (limit_side_len / limit_type, box unclipping, the
+shrink-then-pad rule for the cls model, greedy CTC decoding).
+Licensed under the Apache License, Version 2.0.
+
+--------------------------------------------------------------------------------
+PaddleOCR  (https://github.com/PaddlePaddle/PaddleOCR)
+--------------------------------------------------------------------------------
+The models used are the PP-OCRv4 detection / recognition / classification
+models.  The pre- and post-processing conventions (normalisation, the 48 px
+text height, `imgW = 48 * max_wh_ratio`, the DB probability map) follow
+PaddleOCR's definitions.
+Licensed under the Apache License, Version 2.0.
+
+The model weight files themselves are NOT redistributed in this repository.
+See ../docs/06-模型构建.md for how to obtain and convert them.
+
+--------------------------------------------------------------------------------
+rknn-toolkit2  (https://github.com/airockchip/rknn-toolkit2)
+--------------------------------------------------------------------------------
+The NPU inference runtime and the ONNX -> RKNN compiler.
+Licensed under the Apache License, Version 2.0.

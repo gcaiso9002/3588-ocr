@@ -1,0 +1,3 @@
+#!/bin/sh
+# PaddleOCR-model OCR CLI for the AIoT 3588 board (RapidOCR / ONNXRuntime runtime)
+exec /opt/rapidocr-venv/bin/python /opt/rapidocr-venv/ro_cli.py "$@"

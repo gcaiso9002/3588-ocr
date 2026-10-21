@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 模型产物（太大，不入库）
+*.rknn
+*.rknn.sizes.json
+models/*.onnx
+
+# 运行时产物
+crops/
+*.log
+_selftest_crop.png
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
