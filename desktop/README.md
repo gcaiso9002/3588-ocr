@@ -7,7 +7,23 @@
 | `npu_ocr_gui.py` | 截图取字 GUI（Ctrl+1） |
 | `npu_ocr_gui_config.json` | 配置（服务地址、快捷键、自动复制/粘贴等） |
 | `npu_ocr_client.py` | 命令行 API 客户端，纯标准库 |
+| `make_exe.py` | 打包成免安装单文件 exe |
+| `make_icon.py` | 生成应用图标 `3588-ocr.ico` |
+| `test_exe.py` | 打包后的端到端自检（真按 Ctrl+1 框选读剪贴板） |
+| `test_exe_discover.py` | 自动发现板子的自检 |
 | `start_npu_ocr.bat` | 启动器（无控制台窗口） |
+
+## 最省事：绿色版 exe
+
+[Releases](https://github.com/gcaiso9002/3588-ocr/releases) 里直接下载 `3588-ocr.exe`
+（16.8 MB），双击即用，**不用装 Python、不写注册表、卸载就是删文件**，
+板子地址它会自己扫出来。
+
+```powershell
+irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe -o $env:USERPROFILE\Desktop\3588-ocr.exe
+```
+
+自己构建见 [../docs/07-绿色单文件.md](../docs/07-绿色单文件.md)。
 
 ## 装依赖
 

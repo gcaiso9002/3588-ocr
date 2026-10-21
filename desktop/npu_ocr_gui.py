@@ -16,6 +16,7 @@ import ctypes.wintypes as wt
 import json
 import os
 import queue
+import socket
 import sys
 import threading
 import time
@@ -54,7 +55,16 @@ except Exception:                                        # noqa: BLE001
     HAVE_WIN32 = False
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CFG_PATH = os.path.join(HERE, "npu_ocr_gui_config.json")
+# A frozen build (onefile .exe) must not keep its config next to the
+# executable's temp dir, so the config lives in %APPDATA%.
+if getattr(sys, "frozen", False):
+    APP_DIR = os.path.dirname(sys.executable)
+    CONFIG_DIR = os.path.join(os.environ.get("APPDATA") or
+                              os.path.expanduser("~"), "3588-ocr")
+else:
+    APP_DIR = HERE
+    CONFIG_DIR = HERE
+CFG_PATH = os.path.join(CONFIG_DIR, "npu_ocr_gui_config.json")
 
 # Generic alternatives used when the configured hotkey is already taken by
 # another program (Windows error 1409).  They are derived from the modifier
@@ -102,6 +112,8 @@ def load_cfg():
 
 def save_cfg(cfg):
     try:
+        if not os.path.isdir(CONFIG_DIR):
+            os.makedirs(CONFIG_DIR, exist_ok=True)
         with open(CFG_PATH, "w", encoding="utf-8") as f:
             json.dump(cfg, f, ensure_ascii=False, indent=2)
     except Exception as e:  # noqa: BLE001
@@ -306,17 +318,68 @@ def server_health(server, timeout=4):
         with urllib.request.urlopen(server.rstrip("/") + "/health",
                                     timeout=timeout) as r:
             data = json.loads(r.read().decode("utf-8"))
-        return data if data.get("ok") else None
+        return data if data.get("ok") and "det" in data else None
     except Exception:  # noqa: BLE001
         return None
 
 
-def discover_server(configured, extra=None):
+def primary_local_ip():
+    """The address this machine would use for outbound traffic.
+
+    A UDP 'connect' sends nothing, it only makes the OS pick a route --
+    which gives us the adapter that actually reaches the board.
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.settimeout(0.3)
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except Exception:  # noqa: BLE001
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except Exception:  # noqa: BLE001
+            return None
+    finally:
+        s.close()
+
+
+def scan_subnet(base_ip, port=8766, timeout=0.35, workers=96):
+    """Look for an npu-ocr service in the /24 around `base_ip`."""
+    try:
+        import ipaddress
+        net = ipaddress.ip_network(base_ip + "/24", strict=False)
+    except Exception:  # noqa: BLE001
+        return None
+    hosts = [str(h) for h in net.hosts()]
+
+    def probe(ip):
+        data = server_health("http://%s:%d" % (ip, port), timeout=timeout)
+        return ip if data else None
+
+    try:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+    except Exception:  # noqa: BLE001
+        return None
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futs = [ex.submit(probe, ip) for ip in hosts]
+        for f in as_completed(futs):
+            try:
+                res = f.result()
+            except Exception:  # noqa: BLE001
+                res = None
+            if res:
+                for g in futs:
+                    g.cancel()
+                return res
+    return None
+
+
+def discover_server(configured, extra=None, allow_scan=True):
     """Find a reachable OCR server.
 
-    The configured address wins; if it is down (board rebooted, IP changed)
-    a short list of well-known addresses is probed and the working one is
-    returned so the app keeps working without touching the settings.
+    The configured address wins; then a short list of well-known addresses;
+    then a scan of the local /24 so the tool finds the board on its own
+    even when the board's IP changed.
     """
     cands = [configured]
     for c in list(extra or []) + list(DEFAULT_CFG.get("server_candidates", [])):
@@ -325,6 +388,16 @@ def discover_server(configured, extra=None):
     for c in cands:
         if server_health(c):
             return c
+    if not allow_scan:
+        return None
+    base = primary_local_ip()
+    if not base:
+        return None
+    log("scanning the local subnet for an npu-ocr service ...")
+    hit = scan_subnet(base)
+    if hit:
+        log("found an npu-ocr service at %s" % hit)
+        return "http://%s:8766" % hit
     return None
 
 
@@ -784,9 +857,17 @@ class App:
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("退出", on_quit),
         )
-        self.tray = pystray.Icon("npu-ocr", self.make_icon(), "npu-ocr 截图取字",
+        self.tray = pystray.Icon("3588-ocr", self.make_icon(), "3588-ocr 截图取字",
                                  menu)
-        threading.Thread(target=self.tray.run, daemon=True).start()
+
+        def run_tray():
+            try:
+                self.tray.run()
+            except Exception as e:  # noqa: BLE001
+                log("tray icon failed: %r" % e)
+
+        threading.Thread(target=run_tray, daemon=True).start()
+        log("tray icon ready")
 
     def quit(self):
         if self.hotkey is not None:
@@ -801,9 +882,41 @@ class App:
         except Exception:  # noqa: BLE001
             pass
 
+    def _prefetch_server(self):
+        """Find the board in the background so the first capture is fast."""
+        cfg_server = self.cfg.get("server", DEFAULT_CFG["server"])
+        if server_health(cfg_server, timeout=3):
+            self.root.after(0, self._set_tray_tooltip)
+            return
+        found = discover_server(cfg_server, self.cfg.get("server_candidates"))
+        if found and found != cfg_server:
+            log("the board moved: %s -> %s" % (cfg_server, found))
+            self.cfg["server"] = found
+            save_cfg(self.cfg)
+            self.root.after(0, self._set_tray_tooltip)
+            return
+        log("no npu-ocr service found")
+        self.root.after(0, self._no_server_notice)
+
+    def _set_tray_tooltip(self):
+        if self.tray is not None:
+            try:
+                self.tray.title = "3588-ocr 截图取字  (%s)" % self.cfg.get("server")
+            except Exception:  # noqa: BLE001
+                pass
+
+    def _no_server_notice(self):
+        self.notify("没找到板子服务",
+                    "在 %s:%s 里没找到 npu-ocr 服务。\n\n"
+                    "请确认板子已开机、网线已插，\n"
+                    "然后在「设置」里填板子的地址。"
+                    % (self.cfg.get("server"), 8766))
+
     def run(self):
         self.set_hotkey(self.cfg.get("hotkey", DEFAULT_CFG["hotkey"]))
         self.setup_tray()
+        save_cfg(self.cfg)          # always leave a config the user can edit
+        threading.Thread(target=self._prefetch_server, daemon=True).start()
         log("npu-ocr gui ready, hotkey=%s server=%s"
             % (self.cfg.get("hotkey"), self.cfg.get("server")))
         self.root.mainloop()
@@ -899,6 +1012,10 @@ def main():
     if cfgfile:
         app.cfg["log_file"] = cfgfile
         _LOG = cfgfile
+    if "--server" in args:
+        i = args.index("--server")
+        if i + 1 < len(args):
+            app.cfg["server"] = args[i + 1].rstrip("/")
     if "--save-dir" in args:
         i = args.index("--save-dir")
         if i + 1 < len(args):

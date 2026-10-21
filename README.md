@@ -12,6 +12,17 @@
 └──────────────┘           └─────────────────┘          └──────────────┘
 ```
 
+## 下载
+
+电脑端的截图取字工具是**免安装单文件 exe**，双击就能用：
+
+| 文件 | 大小 | 说明 |
+|---|---|---|
+| [`3588-ocr.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | 16.8 MB | 绿色软件，不用装 Python，不写注册表，卸载 = 删文件 |
+
+> 板子端需要自己部署（本仓库只含代码，模型文件太大不入库），
+> 部署步骤见下面的「快速开始」。
+
 ## 效果
 
 同一套 PP-OCRv4 权重，NPU 与 CPU 逐行 diff：
@@ -47,6 +58,7 @@
 | [04-HTTP-API](docs/04-HTTP-API.md) | 板子上的服务接口 |
 | [05-桌面取字工具](docs/05-桌面取字工具.md) | Windows 端 Ctrl+1 截图取字 |
 | [06-模型构建](docs/06-模型构建.md) | ONNX → RKNN 的完整流程与工具链踩坑 |
+| [07-绿色单文件](docs/07-绿色单文件.md) | 打包成免安装单文件 exe，构建与自检 |
 
 ## 快速开始
 
@@ -65,13 +77,26 @@ curl http://<board>:8766/health
 
 ### 2. 电脑上装取字工具
 
+**方式一（推荐）：下载绿色版 exe。** 双击即用，不用装 Python，不写注册表，
+卸载就是删文件。
+
+```powershell
+irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe -o $env:USERPROFILE\Desktop\3588-ocr.exe
+```
+
+启动后按 **Ctrl+1**，拖框，文字进剪贴板。
+板子的地址它会**自己扫出来**（本地 /24 并发探测 + 换 IP 后自动重连），
+不用手填。详见 [docs/07-绿色单文件.md](docs/07-绿色单文件.md)。
+
+**方式二：从源码跑。**
+
 ```bash
 cd desktop
 pip install pillow pywin32 pystray
 python npu_ocr_gui.py
 ```
 
-按 **Ctrl+1**，拖框，文字进剪贴板。详见 [docs/05-桌面取字工具.md](docs/05-桌面取字工具.md)。
+两种方式的用法完全一样，详见 [docs/05-桌面取字工具.md](docs/05-桌面取字工具.md)。
 
 ### 3. 或者直接调 API
 

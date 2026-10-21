@@ -5,6 +5,11 @@ __pycache__/
 .venv/
 venv/
 
+# 打包产物
+desktop/dist/
+desktop/build/
+desktop/*.spec
+
 # 模型产物（太大，不入库）
 *.rknn
 *.rknn.sizes.json
