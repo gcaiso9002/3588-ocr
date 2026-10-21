@@ -1,4 +1,4 @@
-# npu-ocr — 在 RK3588 NPU 上跑 PaddleOCR，并让精度追平 CPU 版
+# 3588-ocr — 在 RK3588 NPU 上跑 PaddleOCR，并让精度追平 CPU 版
 
 把 PaddleOCR（PP-OCRv4）编译成 RKNN 模型跑在瑞芯微 RK3588 的 **NPU** 上，
 并把识别精度做到与 CPU（RapidOCR / ONNXRuntime）**逐字一致**，
@@ -53,8 +53,8 @@
 ### 1. 板子上部署服务
 
 ```bash
-git clone <this-repo>
-cd npu-ocr
+git clone https://github.com/gcaiso9002/3588-ocr.git
+cd 3588-ocr
 scp board/* root@<board>:/opt/npu-ocr/
 scp board/npu-ocr.service root@<board>:/etc/systemd/system/
 ssh root@<board> 'systemctl daemon-reload && systemctl enable --now npu-ocr.service'
