@@ -7,6 +7,7 @@ const tipEl = $('tip');
 const noticeEl = $('notice');
 
 let tipTimer = null;
+let autoCloseTimer = null;
 
 function tip(msg, kind) {
   tipEl.textContent = msg;
@@ -34,6 +35,15 @@ window.api.on('result:data', (d) => {
   textEl.focus();
   textEl.setSelectionRange(0, 0);
   autoGrow();
+  // 「弹出后自动关闭」模式：倒计时结束就关掉
+  if (autoCloseTimer) { clearTimeout(autoCloseTimer); autoCloseTimer = null; }
+  if (d.autoCloseMs) {
+    const sec = Math.round(d.autoCloseMs / 1000);
+    tip(sec + ' 秒后自动关闭', '');
+    autoCloseTimer = setTimeout(() => {
+      window.api.send('result:close');
+    }, d.autoCloseMs);
+  }
 });
 
 window.api.on('result:notice', (d) => showNotice(d));
@@ -46,15 +56,26 @@ function autoGrow() {
 }
 window.addEventListener('resize', autoGrow);
 
+/** 用户开始动手了（复制/粘贴/改文字）-> 别再自动把面板收走 */
+function cancelAutoClose() {
+  if (!autoCloseTimer) return;
+  clearTimeout(autoCloseTimer);
+  autoCloseTimer = null;
+}
+
 $('btn-copy').addEventListener('click', async () => {
+  cancelAutoClose();
   await window.api.copy(textEl.value);
   tip('已复制到剪贴板', 'ok');
 });
 
 $('btn-paste').addEventListener('click', async () => {
+  cancelAutoClose();
   await window.api.paste(textEl.value);
   tip('已粘贴到原窗口', 'ok');
 });
+
+textEl.addEventListener('input', cancelAutoClose);
 
 $('btn-rescan').addEventListener('click', () => {
   window.api.send('result:rescan');

@@ -94,7 +94,20 @@
             <div class="card-title">行为</div>
             <label class="check"><input type="checkbox" id="auto_copy"><span>识别后自动复制到剪贴板</span></label>
             <label class="check"><input type="checkbox" id="auto_paste"><span>识别后自动粘贴回原窗口</span></label>
-            <label class="check"><input type="checkbox" id="keep_result_window"><span>结果窗口不自动关闭</span></label>
+            <div class="row">
+              <label class="lbl">识别结果显示</label>
+              <div class="ctl grow">
+                <select id="result_mode">
+                  <option value="always">弹出结果面板，并一直保留</option>
+                  <option value="auto">弹出结果面板，复制后自动关闭</option>
+                  <option value="silent">不弹出，只把文字放进剪贴板</option>
+                </select>
+              </div>
+              <span class="hint">
+                选「不弹出」时，识别完直接把文字写进剪贴板、屏幕上什么都不出现 ——
+                适合「取完字接着干活」的场景。
+              </span>
+            </div>
             <label class="check"><input type="checkbox" id="show_toolbar"><span>显示悬浮工具条</span></label>
             <label class="check"><input type="checkbox" id="start_minimized"><span>启动时最小化到托盘</span></label>
           </div>

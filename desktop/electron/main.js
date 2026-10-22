@@ -37,7 +37,10 @@ const DEFAULT_CFG = {
   auto_copy: true,
   auto_paste: false,
   magnifier: true,
-  keep_result_window: false,
+  // 识别结果怎么显示：always 弹出并保留 / auto 弹出后自动关 / silent 完全不弹
+  result_mode: 'always',
+  result_auto_close: 3,             // result_mode=auto 时，复制后几秒自动关
+  keep_result_window: true,         // 旧配置项，仅为兼容保留
   merge_lines: false,
   trim_spaces: false,
   show_toolbar: true,
@@ -662,14 +665,35 @@ async function runOcr(pngBuffer, absRect) {
   }
   lastResult = { ...out, rect: absRect };
   log('ocr text: ' + JSON.stringify(out.text.slice(0, 120)));
+  const mode = resultMode();
   if (cfg.auto_copy && out.text) {
     clipboard.writeText(out.text);
     log('copied to clipboard (' + out.text.length + ' chars)');
   }
-  showResultPanel(out, absRect);
+  if (mode === 'silent') {
+    // 静默模式：屏幕上什么都不出，只把文字交到剪贴板
+    if (out.text && !cfg.auto_copy) {
+      clipboard.writeText(out.text);
+      log('copied to clipboard (silent mode)');
+    }
+    if (!out.text) {
+      showResult({ title: '没识别到文字', message: '这块区域里没找到可识别的文字，换个地方再试试。', kind: 'warn' });
+    } else {
+      log('result panel suppressed (silent mode)');
+    }
+  } else {
+    showResultPanel(out, absRect, mode === 'auto');
+  }
   if (cfg.auto_paste && out.text) {
     setTimeout(() => pasteToForeground(out.text), 150);
   }
+}
+
+/** 结果显示方式：always / auto / silent（兼容老配置里的 keep_result_window） */
+function resultMode() {
+  const m = String(cfg.result_mode || '');
+  if (m === 'silent' || m === 'auto' || m === 'always') return m;
+  return cfg.keep_result_window === false ? 'auto' : 'always';
 }
 
 function pasteToForeground(text) {
@@ -684,12 +708,13 @@ function pasteToForeground(text) {
 
 // ---------------------------------------------------------------- 结果面板
 
-function showResultPanel(out, absRect) {
+function showResultPanel(out, absRect, autoClose) {
   const payload = {
     text: postProcess(out.text),
     lines: out.lines.length,
     elapsed: out.elapsed,
     rect: absRect,
+    autoCloseMs: autoClose ? Math.max(1, Number(cfg.result_auto_close) || 3) * 1000 : 0,
   };
   if (!resultWin || resultWin.isDestroyed()) {
     resultWin = new BrowserWindow({
@@ -825,7 +850,8 @@ ipcMain.handle('clip:read', () => clipboard.readText());
 
 ipcMain.on('result:rescan', () => {
   if (!lastResult) return;
-  showResultPanel(lastResult, lastResult.rect || { x: 100, y: 100, w: 100, h: 100 });
+  showResultPanel(lastResult, lastResult.rect || { x: 100, y: 100, w: 100, h: 100 },
+    resultMode() === 'auto');
 });
 ipcMain.on('result:close', () => { if (resultWin) resultWin.hide(); });
 ipcMain.on('result:open-settings', () => openSettings());
@@ -938,6 +964,9 @@ module.exports = {
   startCapture,
   closeOverlays,
   loadConfig,
+  resultMode,
+  /** 改配置（仅测试用） */
+  __setCfg: (patch) => { Object.assign(cfg, patch); return cfg; },
   /** 当前内部状态，给测试断言用 */
   __state: () => ({
     overlays: overlays.size,
@@ -945,6 +974,7 @@ module.exports = {
     capturing,
     escArmed: !!escShortcut,
     idleTimeoutMs: idleTimeoutMs(),
+    resultMode: resultMode(),
   }),
 };
 

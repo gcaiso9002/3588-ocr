@@ -19,7 +19,7 @@
 
 | 版本 | 大小 | 说明 |
 |---|---|---|
-| [`3588-ocr.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | ~70 MB | **v1.2.3**：Electron 版，圆角结果面板 + 完整设置界面，仿天若 OCR 的观感；选区 2 秒无操作自动撤、双屏抓屏提速约 1.5 倍 |
+| [`3588-ocr.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | ~70 MB | **v1.2.4**：Electron 版，圆角结果面板 + 完整设置界面，仿天若 OCR 的观感；结果面板可设为「不弹出只进剪贴板」，选区 2 秒无操作自动撤 |
 
 ```powershell
 irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe -o $env:USERPROFILE\Desktop\3588-ocr.exe
@@ -30,6 +30,7 @@ irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe
 
 > 选区界面里：**Esc** 或**右键**取消；**2 秒没动静自动撤掉遮罩**（挪一下鼠标就重新计时）；
 > 抓屏途中再按一次 **Ctrl+1** 会作废当前这次、重新抓一张新的。
+> 识别完要不要弹结果面板，在**设置 → 基本设置 → 识别结果显示**里选（含「不弹出只进剪贴板」）。
 
 > 板子端需要自己部署（本仓库只含代码，模型文件太大不入库），部署步骤见下面的「快速开始」。
 

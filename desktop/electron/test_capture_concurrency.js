@@ -312,6 +312,26 @@ async function main_test() {
     '存活遮罩=' + orphanOverlays());
   main.closeOverlays('test');
 
+  console.log('\n[9] 结果显示方式三档都能取到');
+  check('默认是 always（弹出并保留）', main.resultMode() === 'always',
+    'resultMode=' + main.resultMode());
+  const setCfg = main.__setCfg;
+  setCfg({ result_mode: 'auto' });
+  check('可切到 auto（弹出后自动关）', main.resultMode() === 'auto',
+    'resultMode=' + main.resultMode());
+  setCfg({ result_mode: 'silent' });
+  check('可切到 silent（不弹出）', main.resultMode() === 'silent',
+    'resultMode=' + main.resultMode());
+  setCfg({ result_mode: 'silent' });
+  check('silent 优先于旧的 keep_result_window',
+    main.resultMode() === 'silent', 'resultMode=' + main.resultMode());
+  setCfg({ result_mode: undefined, keep_result_window: false });
+  check('老配置只有 keep_result_window=false 时映射成 auto',
+    main.resultMode() === 'auto', 'resultMode=' + main.resultMode());
+  setCfg({ result_mode: undefined, keep_result_window: true });
+  check('老配置 keep_result_window=true 时映射成 always',
+    main.resultMode() === 'always', 'resultMode=' + main.resultMode());
+
   console.log('\n---- 关键日志 ----');
   for (const l of state.logLines) {
     if (/capture|overlay/.test(l)) console.log('    ' + l);

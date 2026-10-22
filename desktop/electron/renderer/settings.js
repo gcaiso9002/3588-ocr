@@ -26,7 +26,8 @@ function readForm() {
     hotkey: $('hotkey').value.trim(),
     auto_copy: $('auto_copy').checked,
     auto_paste: $('auto_paste').checked,
-    keep_result_window: $('keep_result_window').checked,
+    result_mode: $('result_mode').value,
+    keep_result_window: $('result_mode').value === 'always',
     show_toolbar: $('show_toolbar').checked,
     start_minimized: $('start_minimized').checked,
     merge_lines: $('merge_lines').checked,
@@ -43,7 +44,9 @@ function fillForm(c) {
   $('hotkey').value = c.hotkey || 'ctrl+1';
   $('auto_copy').checked = !!c.auto_copy;
   $('auto_paste').checked = !!c.auto_paste;
-  $('keep_result_window').checked = !!c.keep_result_window;
+  // 老配置里只有 keep_result_window，这里兼容一下
+  $('result_mode').value = c.result_mode
+    || (c.keep_result_window === false ? 'auto' : 'always');
   $('show_toolbar').checked = !!c.show_toolbar;
   $('start_minimized').checked = !!c.start_minimized;
   $('merge_lines').checked = !!c.merge_lines;
