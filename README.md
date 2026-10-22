@@ -19,8 +19,7 @@
 
 | 版本 | 大小 | 说明 |
 |---|---|---|
-| [`3588-ocr.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | ~100 MB | **Electron 版（v1.1.0，主推）**：圆角结果面板 + 完整设置界面，仿天若 OCR 的观感 |
-| [`3588-ocr-lite.exe`](https://github.com/gcaiso9002/3588-ocr/releases/tag/v1.0.0) | 16.8 MB | 轻量版（Tk）：功能一样，界面是系统原生控件，体积小 6 倍 |
+| [`3588-ocr.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | ~70 MB | **Electron 版**：圆角结果面板 + 完整设置界面，仿天若 OCR 的观感 |
 
 ```powershell
 irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe -o $env:USERPROFILE\Desktop\3588-ocr.exe
@@ -64,10 +63,8 @@ irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe
 | [02-精度对齐](docs/02-精度对齐.md) | 把精度追平 CPU 的**三个坑**（末尾 Softmax / cls 拉伸 / det 几何） |
 | [03-性能优化](docs/03-性能优化.md) | 三核并行、CTC 解码、det 多核的原理与实测 |
 | [04-HTTP-API](docs/04-HTTP-API.md) | 板子上的服务接口 |
-| [05-桌面取字工具](docs/05-桌面取字工具.md) | Windows 端 Ctrl+1 截图取字 |
+| [05-桌面取字工具](docs/05-桌面取字工具.md) | **Windows 端客户端（Electron）**：界面、实现、构建与踩坑 |
 | [06-模型构建](docs/06-模型构建.md) | ONNX → RKNN 的完整流程与工具链踩坑 |
-| [07-绿色单文件](docs/07-绿色单文件.md) | 轻量版（Tk）打包成免安装单文件 exe |
-| [08-Electron桌面端](docs/08-Electron桌面端.md) | **v1.1.0 主力客户端**：重做界面 + 完整设置界面 |
 
 ## 快速开始
 
@@ -97,25 +94,15 @@ irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe
 板子的地址它会**自己扫出来**（本地 /24 并发探测 + 换 IP 后自动重连），不用手填。
 
 界面：圆角悬浮的结果面板 + 侧边栏设置界面（基本 / 快捷键 / 识别 / 高级 / 关于）。
-详见 [docs/08-Electron桌面端.md](docs/08-Electron桌面端.md)。
+详见 [docs/05-桌面取字工具.md](docs/05-桌面取字工具.md)。
 
-**方式二：从源码跑（Electron 版）。**
+**方式二：从源码跑。**
 
 ```bash
 cd desktop/electron
 npm install
 npm start
 ```
-
-**方式三：从源码跑（轻量 Tk 版，16.8 MB 那个）。**
-
-```bash
-cd desktop
-pip install pillow pywin32 pystray
-python npu_ocr_gui.py
-```
-
-三种方式的用法完全一样，详见 [docs/05-桌面取字工具.md](docs/05-桌面取字工具.md)。
 
 ### 3. 或者直接调 API
 
@@ -127,7 +114,7 @@ curl -F "file=@pic.jpg" http://<board>:8766/ocr
 
 ```
 board/     板子上跑的东西：流水线、HTTP 服务、RKNN 转换脚本、systemd 单元
-desktop/   电脑端：Electron 截图取字客户端（主）、轻量 Tk 版、API 客户端
+desktop/   电脑端：Electron 截图取字客户端 + 命令行 API 客户端
 docs/      详细文档
 samples/   测试图片
 tools/     构建与自检脚本

@@ -27,6 +27,12 @@ KNOWN = "Hello 12345 ABCdef"
 KNOWN_CN = "识别测试 67890"
 
 import tkinter as tk
+from PIL import ImageGrab
+
+# virtual screen origin, so we can map GetWindowRect() onto the grab
+SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN = 76, 77
+vx = -user32.GetSystemMetrics(SM_XVIRTUALSCREEN)
+vy = -user32.GetSystemMetrics(SM_YVIRTUALSCREEN)
 
 root = tk.Tk()
 root.geometry("900x400")
@@ -37,19 +43,35 @@ tk.Label(root, text=KNOWN_CN, font=("Microsoft YaHei UI", 30), bg="white",
 root.update()
 
 _hwnd = user32.GetParent(root.winfo_id()) or root.winfo_id()
-# raise to the top of the topmost band, without moving or resizing it
-for _ in range(3):
+
+
+def window_is_visible(hwnd):
+    """True when our (white) window really is the topmost thing there."""
+    from PIL import ImageStat
+    l, t, r, b = win32gui.GetWindowRect(hwnd)
+    shot = ImageGrab.grab(all_screens=True)
+    crop = shot.crop((l - vx + 20, t - vy + 20, l - vx + 220, t - vy + 120))
+    # mostly white == our window; the text is black so use the mean, not the min
+    return ImageStat.Stat(crop.convert("L")).mean[0] > 170
+
+
+# Other always-on-top windows (chat apps, the IDE) keep stealing the area,
+# so keep raising ours until it really is on top.
+for _ in range(12):
     win32gui.SetWindowPos(_hwnd, -1, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0040)
     root.attributes("-topmost", True)
     root.lift()
     root.focus_force()
     root.update()
-    time.sleep(0.4)
-time.sleep(1.0)
+    time.sleep(0.35)
+    if window_is_visible(_hwnd):
+        break
+else:
+    print("WARNING: the known-text window stays covered")
 
 l, t, r, b = win32gui.GetWindowRect(_hwnd)
 WIN_X, WIN_Y, WIN_W, WIN_H = l, t, r - l, b - t
-print("known-text window rect:", (l, t, r, b))
+print("known-text window rect:", (l, t, r, b), "| on top:", window_is_visible(_hwnd))
 
 # --- fire the global hotkey (Ctrl+1) -------------------------------------
 VK_CONTROL, VK_1 = 0x11, 0x31

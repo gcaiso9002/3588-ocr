@@ -20,6 +20,7 @@ app.setName('3588-ocr');
 const HERE = __dirname;
 const RENDERER = path.join(HERE, 'renderer');
 const ASSETS = path.join(HERE, 'assets');
+const ICON_PNG = path.join(ASSETS, 'icon.png');
 const FOCUS_PS = path.join(HERE, 'native', 'focus.ps1');
 
 // ---------------------------------------------------------------- 配置
@@ -173,14 +174,18 @@ async function discoverServer({ scan = true } = {}) {
     return null;
   }
   log('scanning the local subnet ' + base + '.0/24 for an npu-ocr service ...');
-  const hit = await scanSubnet(base);
-  if (hit) {
-    log('found an npu-ocr service at ' + hit);
-    saveConfig({ server: hit });
-  } else {
-    log('no npu-ocr service found on the local subnet');
+  // 板子可能正在重启 / 刚开机，第一次扫不到时隔几秒再扫两次
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const hit = await scanSubnet(base);
+    if (hit) {
+      log('found an npu-ocr service at ' + hit);
+      saveConfig({ server: hit });
+      return hit;
+    }
+    log('no npu-ocr service found on the local subnet (attempt ' + attempt + '/3)');
+    if (attempt < 3) await new Promise((r) => setTimeout(r, 4000));
   }
-  return hit;
+  return null;
 }
 
 /** 用板子做一次 OCR，返回 { text, lines, elapsed } */
@@ -335,6 +340,7 @@ function createToolbar() {
     alwaysOnTop: true,
     hasShadow: false,
     show: false,
+    icon: ICON_PNG,
     webPreferences: { preload: path.join(HERE, 'preload.js'), contextIsolation: true },
   });
   toolbarWin.loadFile(path.join(RENDERER, 'toolbar.html'));
@@ -423,6 +429,7 @@ async function startCapture() {
       alwaysOnTop: true,
       show: false,
       enableLargerThanScreen: true,
+      icon: ICON_PNG,
       webPreferences: {
         preload: path.join(HERE, 'preload.js'),
         contextIsolation: true,
@@ -546,6 +553,7 @@ function showResultPanel(out, absRect) {
       hasShadow: false,
       minWidth: 360,
       minHeight: 240,
+      icon: ICON_PNG,
       webPreferences: {
         preload: path.join(HERE, 'preload.js'),
         contextIsolation: true,
@@ -613,6 +621,7 @@ function openSettings() {
     frame: false,
     backgroundColor: '#f4f5f7',
     show: false,
+    icon: ICON_PNG,
     webPreferences: {
       preload: path.join(HERE, 'preload.js'),
       contextIsolation: true,
