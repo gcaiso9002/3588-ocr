@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' file: data:;">
+  <title>3588-ocr 设置</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="win">
+    <!-- 自绘标题栏 -->
+    <div class="titlebar">
+      <div class="tb-left">
+        <span class="tb-logo"></span>
+        <span class="tb-name">3588-ocr</span>
+        <span class="tb-sub">设置</span>
+      </div>
+      <div class="tb-right">
+        <button class="tb-btn" id="btn-min" title="最小化">
+          <svg viewBox="0 0 24 24"><path d="M5 11h14v2H5z"/></svg>
+        </button>
+        <button class="tb-btn" id="btn-close" title="关闭">
+          <svg viewBox="0 0 24 24"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3Z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="body">
+      <!-- 左侧导航 -->
+      <nav class="side">
+        <div class="side-group">通用</div>
+        <button class="nav active" data-page="basic">
+          <svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5Zm-1 14-4-4 1.4-1.4L11 13.2l4.6-4.6L17 10Z"/></svg>
+          基本设置
+        </button>
+        <button class="nav" data-page="hotkey">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm2 4v2h2V9Zm4 0v2h2V9Zm4 0v2h2V9Zm-8 4v2h2v-2Zm4 0v2h6v-2Z"/></svg>
+          快捷键
+        </button>
+        <button class="nav" data-page="ocr">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16v3H4Zm0 5h10v3H4Zm0 5h16v3H4Zm12-5h4v3h-4Z"/></svg>
+          识别
+        </button>
+        <div class="side-group">其它</div>
+        <button class="nav" data-page="advanced">
+          <svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 4 4 4 4 0 0 0-4-4Zm8.4 4a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L15.5 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6a7.4 7.4 0 0 0 .1-1.2Z"/></svg>
+          高级
+        </button>
+        <button class="nav" data-page="about">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 15h-2v-6h2Zm0-8h-2V7h2Z"/></svg>
+          关于
+        </button>
+
+        <div class="side-foot">
+          <div class="board-state" id="board-state">
+            <span class="dot"></span><span id="board-text">检测中…</span>
+          </div>
+        </div>
+      </nav>
+
+      <!-- 右侧内容 -->
+      <main class="content" id="content">
+
+        <!-- 基本设置 -->
+        <section class="page active" data-page="basic">
+          <h1>基本设置</h1>
+          <p class="lead">识别在 RK3588 板子的 NPU 上完成，这里配置怎么找到它。</p>
+
+          <div class="card">
+            <div class="card-title">板子服务</div>
+            <div class="row">
+              <label class="lbl">服务地址</label>
+              <div class="ctl grow">
+                <input id="server" type="text" spellcheck="false" placeholder="http://192.168.31.230:8766">
+              </div>
+            </div>
+            <div class="row">
+              <label class="lbl">备用地址</label>
+              <div class="ctl grow">
+                <input id="candidates" type="text" spellcheck="false" placeholder="http://192.168.31.40:8766">
+                <div class="hint">多个用逗号分隔。程序会依次尝试，连不上时自动扫描本地网段找板子。</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="ctl grow">
+                <button class="btn" id="btn-test">测试连接</button>
+                <button class="btn" id="btn-find">自动查找板子</button>
+                <span class="inline-msg" id="server-msg"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">行为</div>
+            <label class="check"><input type="checkbox" id="auto_copy"><span>识别后自动复制到剪贴板</span></label>
+            <label class="check"><input type="checkbox" id="auto_paste"><span>识别后自动粘贴回原窗口</span></label>
+            <label class="check"><input type="checkbox" id="keep_result_window"><span>结果窗口不自动关闭</span></label>
+            <label class="check"><input type="checkbox" id="show_toolbar"><span>显示悬浮工具条</span></label>
+            <label class="check"><input type="checkbox" id="start_minimized"><span>启动时最小化到托盘</span></label>
+          </div>
+        </section>
+
+        <!-- 快捷键 -->
+        <section class="page" data-page="hotkey">
+          <h1>快捷键</h1>
+          <p class="lead">全局快捷键在任何软件里都能触发。</p>
+
+          <div class="card">
+            <div class="card-title">截图取字</div>
+            <div class="row">
+              <label class="lbl">全局快捷键</label>
+              <div class="ctl grow">
+                <input id="hotkey" type="text" spellcheck="false" readonly placeholder="点击后按下想要的组合键">
+                <div class="hint">点输入框，然后直接按下组合键（例如 Ctrl + Shift + A）。松开自动记录。</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="ctl grow">
+                <span class="inline-msg" id="hotkey-msg"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">默认</div>
+            <div class="row">
+              <div class="ctl grow">
+                <span class="hint">快捷键被别的程序占用时，程序会自动换一组空闲的键并提示你。</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 识别 -->
+        <section class="page" data-page="ocr">
+          <h1>识别</h1>
+          <p class="lead">板子上的模型已经和 CPU 版对齐，这里只调输出的样子。</p>
+
+          <div class="card">
+            <div class="card-title">文本处理</div>
+            <label class="check"><input type="checkbox" id="merge_lines"><span>合并换行符（把所有行拼成一段）</span></label>
+            <label class="check"><input type="checkbox" id="trim_spaces"><span>去除每行首尾空格</span></label>
+          </div>
+
+          <div class="card">
+            <div class="card-title">截图</div>
+            <label class="check"><input type="checkbox" id="magnifier"><span>框选时显示放大镜</span></label>
+          </div>
+
+          <div class="card">
+            <div class="card-title">性能</div>
+            <div class="row">
+              <label class="lbl">识别超时</label>
+              <div class="ctl">
+                <input id="ocr_timeout" type="number" min="5" max="300" step="5" style="width:110px">
+                <span class="unit">秒</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 高级 -->
+        <section class="page" data-page="advanced">
+          <h1>高级</h1>
+          <p class="lead">一般用不到。</p>
+
+          <div class="card">
+            <div class="card-title">文件</div>
+            <div class="row">
+              <label class="lbl">配置文件</label>
+              <div class="ctl grow">
+                <span class="path" id="cfg-path">%APPDATA%\3588-ocr\config.json</span>
+                <button class="btn" id="btn-reveal">打开所在文件夹</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">日志</div>
+            <div class="row">
+              <div class="ctl grow">
+                <span class="hint">运行日志写在 <code>%APPDATA%\3588-ocr\3588-ocr.log</code>，出问题时可以看它。</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 关于 -->
+        <section class="page" data-page="about">
+          <h1>关于</h1>
+          <div class="card about-card">
+            <span class="big-logo"></span>
+            <div class="about-main">
+              <div class="about-name">3588-ocr</div>
+              <div class="about-ver">版本 <span id="ver">1.1.0</span> · Electron 客户端</div>
+              <div class="about-desc">
+                把 PaddleOCR（PP-OCRv4）编译成 RKNN 跑在 RK3588 的 NPU 上，
+                精度与 CPU 版逐字一致。电脑端只负责截图、选区、取词、剪贴板。
+              </div>
+              <div class="about-links">
+                <button class="btn" id="btn-repo">打开项目主页</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- 底部操作条 -->
+    <div class="footbar">
+      <button class="btn ghost" id="btn-reset">恢复默认</button>
+      <div class="spacer"></div>
+      <span class="dirty" id="dirty"></span>
+      <button class="btn" id="btn-cancel">取消</button>
+      <button class="btn primary" id="btn-save">保存</button>
+    </div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>

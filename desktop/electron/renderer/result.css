@@ -1,0 +1,195 @@
+:root {
+  --brand: #2f6fed;
+  --brand-weak: #eaf0ff;
+  --text: #1d2129;
+  --text-2: #86909c;
+  --line: #e6e8eb;
+  --bg: #ffffff;
+  --ok: #12b76a;
+  --warn: #f79009;
+  --err: #f04438;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  position: absolute;
+  inset: 0;
+  margin: 6px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid rgba(0, 0, 0, .06);
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .22), 0 2px 8px rgba(15, 23, 42, .08);
+  overflow: hidden;
+}
+
+/* ---------------- 标题栏 ---------------- */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 10px 11px 14px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #fbfcfe 0%, #ffffff 100%);
+  -webkit-app-region: drag;
+  flex: 0 0 auto;
+}
+
+.head-left { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.head-right { margin-left: auto; display: flex; align-items: center; gap: 2px; -webkit-app-region: no-drag; }
+
+.logo {
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #4a8bff, #2f6fed);
+  box-shadow: 0 2px 6px rgba(47, 111, 237, .35);
+  flex: 0 0 auto;
+}
+
+.title { font-size: 13.5px; font-weight: 600; letter-spacing: .2px; }
+
+.meta {
+  font-size: 12px;
+  color: var(--text-2);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f2f3f5;
+  white-space: nowrap;
+}
+
+.icon-btn {
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.icon-btn:hover { background: #f0f1f3; }
+.icon-btn:active { transform: scale(.94); }
+.icon-btn svg { width: 16px; height: 16px; fill: #646a73; }
+.icon-btn.small { width: 22px; height: 22px; }
+.icon-btn.small svg { width: 12px; height: 12px; }
+
+/* ---------------- 提示条 ---------------- */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 10px 12px 0;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: #fff7e8;
+  border: 1px solid #ffe1a8;
+  flex: 0 0 auto;
+}
+.notice[hidden] { display: none; }
+.notice.error { background: #fef3f2; border-color: #fecdca; }
+.notice.warn  { background: #fff7e8; border-color: #ffe1a8; }
+.notice.info  { background: var(--brand-weak); border-color: #c7d7ff; }
+
+.notice-icon {
+  width: 18px; height: 18px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--warn);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: grid; place-items: center;
+}
+.notice.error .notice-icon { background: var(--err); }
+.notice.info  .notice-icon { background: var(--brand); }
+
+.notice-body { flex: 1; min-width: 0; }
+.notice-title { font-size: 13px; font-weight: 600; }
+.notice-text { font-size: 12.5px; color: #5c6270; margin-top: 2px; white-space: pre-wrap; }
+
+/* ---------------- 文本区 ---------------- */
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  padding: 4px 12px 0;
+}
+
+#text {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Consolas", monospace;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text);
+  padding: 10px 2px;
+  overflow-y: auto;
+}
+#text::placeholder { color: #c9cdd4; }
+
+/* ---------------- 底部操作条 ---------------- */
+.foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  background: #fbfcfd;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .08s, box-shadow .15s;
+}
+.btn:hover { border-color: #c6d9ff; background: #f7faff; }
+.btn:active { transform: translateY(1px); }
+.btn svg { width: 14px; height: 14px; fill: #646a73; }
+
+.btn.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(47, 111, 237, .28);
+}
+.btn.primary:hover { background: #1f5fd8; border-color: #1f5fd8; }
+.btn.primary svg { fill: #fff; }
+
+.spacer { flex: 1; }
+
+.tip {
+  font-size: 12px;
+  color: var(--text-2);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.tip.show { opacity: 1; }
+.tip.ok { color: var(--ok); }
+.tip.err { color: var(--err); }

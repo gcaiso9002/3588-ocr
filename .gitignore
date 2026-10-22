@@ -10,6 +10,13 @@ desktop/dist/
 desktop/build/
 desktop/*.spec
 
+# Electron
+desktop/electron/node_modules/
+desktop/electron/dist/
+desktop/electron/out/
+desktop/electron/*.out
+desktop/electron/*.log
+
 # 模型产物（太大，不入库）
 *.rknn
 *.rknn.sizes.json

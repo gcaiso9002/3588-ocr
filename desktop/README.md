@@ -2,6 +2,31 @@
 
 全局快捷键截图取字 + HTTP API 客户端。识别在 RK3588 板子上跑。
 
+| 版本 | 说明 |
+|---|---|
+| **Electron 版（主推）** | `electron/` 目录。圆角悬浮结果面板 + 侧边栏设置界面，仿天若 OCR。→ [../docs/08-Electron桌面端.md](../docs/08-Electron桌面端.md) |
+| Tk 版（轻量） | 本目录下 `npu_ocr_gui.py` 等。16.8 MB 的那个 exe 就是它。→ [../docs/05-桌面取字工具.md](../docs/05-桌面取字工具.md) |
+
+## Electron 版
+
+```powershell
+cd electron
+npm install
+npm start          # 开发模式
+npm run dist       # 产出 dist\3588-ocr.exe（免安装单文件）
+```
+
+或直接下载：[Releases](https://github.com/gcaiso9002/3588-ocr/releases)
+
+```powershell
+irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe -o $env:USERPROFILE\Desktop\3588-ocr.exe
+```
+
+双击即用，不用装 Python/Node，不写注册表，卸载就是删文件。
+板子地址它会自己扫出来（本地 /24 并发探测 + 换 IP 后自动重连）。
+
+## Tk 版（轻量）
+
 | 文件 | 作用 |
 |---|---|
 | `npu_ocr_gui.py` | 截图取字 GUI（Ctrl+1） |
@@ -13,19 +38,7 @@
 | `test_exe_discover.py` | 自动发现板子的自检 |
 | `start_npu_ocr.bat` | 启动器（无控制台窗口） |
 
-## 最省事：绿色版 exe
-
-[Releases](https://github.com/gcaiso9002/3588-ocr/releases) 里直接下载 `3588-ocr.exe`
-（16.8 MB），双击即用，**不用装 Python、不写注册表、卸载就是删文件**，
-板子地址它会自己扫出来。
-
-```powershell
-irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe -o $env:USERPROFILE\Desktop\3588-ocr.exe
-```
-
-自己构建见 [../docs/07-绿色单文件.md](../docs/07-绿色单文件.md)。
-
-## 装依赖
+### 装依赖
 
 ```powershell
 pip install pillow pywin32 pystray
@@ -36,7 +49,7 @@ pip install pillow pywin32 pystray
 * `pystray` —— 托盘图标（可选，缺了就没有托盘图标）
 * `tkinter` —— Python 自带
 
-## 跑
+### 跑
 
 ```powershell
 python npu_ocr_gui.py
@@ -44,9 +57,7 @@ python npu_ocr_gui.py
 
 按 **Ctrl+1** 框选 → 出字 → 进剪贴板。
 
-详见 [../docs/05-桌面取字工具.md](../docs/05-桌面取字工具.md)。
-
-## 改配置
+### 改配置
 
 `npu_ocr_gui_config.json`：
 

@@ -1,0 +1,127 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  cursor: crosshair;
+  user-select: none;
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+}
+
+#stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 屏幕快照的画布：后端缓冲是物理像素，显示尺寸是 DIP */
+#shot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  pointer-events: none;
+}
+
+/* 选区：用超大 box-shadow 把四周挖暗，洞里透出原图 */
+#sel {
+  position: absolute;
+  display: none;
+  border: 2px solid #2f6fed;
+  border-radius: 2px;
+  box-shadow: 0 0 0 9999px rgba(8, 12, 20, 0.46);
+  pointer-events: none;
+  z-index: 2;
+}
+
+#sel::before,
+#sel::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #2f6fed;
+  background: #fff;
+  border-radius: 2px;
+}
+#sel::before { left: -6px; top: -6px; }
+#sel::after  { right: -6px; bottom: -6px; }
+
+#hline, #vline {
+  position: absolute;
+  display: none;
+  background: rgba(47, 111, 237, 0.5);
+  pointer-events: none;
+  z-index: 3;
+}
+#hline { left: 0; width: 100%; height: 1px; }
+#vline { top: 0; height: 100%; width: 1px; }
+
+/* 放大镜 */
+#mag {
+  position: absolute;
+  display: none;
+  border: 2px solid #2f6fed;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 4;
+  image-rendering: pixelated;
+}
+
+/* 选区尺寸标签 */
+#size {
+  position: absolute;
+  display: none;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(47, 111, 237, 0.94);
+  color: #fff;
+  font-size: 12px;
+  line-height: 16px;
+  pointer-events: none;
+  z-index: 5;
+  white-space: nowrap;
+}
+
+#hint {
+  position: absolute;
+  left: 50%;
+  bottom: 42px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(16, 20, 28, 0.82);
+  color: #e8ebf0;
+  font-size: 13px;
+  letter-spacing: .2px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+  pointer-events: none;
+  z-index: 6;
+  backdrop-filter: blur(6px);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 1px 7px;
+  margin-right: 4px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, .16);
+  color: #fff;
+  font-size: 12px;
+}
+
+.sep {
+  width: 1px;
+  height: 12px;
+  background: rgba(255, 255, 255, .22);
+}

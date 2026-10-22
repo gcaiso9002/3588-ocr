@@ -1,0 +1,51 @@
+{
+  "name": "3588-ocr",
+  "productName": "3588-ocr",
+  "version": "1.1.0",
+  "description": "RK3588 NPU 截图取字（Electron 桌面端）",
+  "main": "main.js",
+  "author": "gcaiso9002",
+  "license": "Apache-2.0",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable --x64",
+    "dist:dir": "electron-builder --win --dir"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.gcaiso9002.3588ocr",
+    "productName": "3588-ocr",
+    "copyright": "Copyright (c) 2026 gcaiso9002",
+    "asar": true,
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*",
+      "native/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "3588-ocr.exe"
+    },
+    "portable": {
+      "artifactName": "3588-ocr.exe"
+    },
+    "compression": "maximum"
+  }
+}

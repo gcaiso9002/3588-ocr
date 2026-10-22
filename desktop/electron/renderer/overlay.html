@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' file: data:;">
+  <title>选区</title>
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <div id="stage">
+    <canvas id="shot"></canvas>
+    <div id="sel"></div>
+    <div id="hline"></div>
+    <div id="vline"></div>
+    <canvas id="mag" width="132" height="132"></canvas>
+    <div id="size"></div>
+  </div>
+  <div id="hint">
+    <span class="kbd">拖动</span> 框选区域
+    <span class="sep"></span>
+    <span class="kbd">Esc</span> 取消
+    <span class="sep"></span>
+    <span class="kbd">松开</span> 开始识别
+  </div>
+  <script src="overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+  user-select: none;
+}
+
+.bar {
+  position: absolute;
+  inset: 0;
+  margin: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 5px 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .86);
+  border: 1px solid rgba(15, 23, 42, .07);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .16);
+  backdrop-filter: blur(14px);
+}
+
+.shot {
+  width: 40px; height: 40px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a8bff, #2f6fed);
+  color: #fff;
+  cursor: pointer;
+  display: grid; place-items: center;
+  box-shadow: 0 3px 10px rgba(47, 111, 237, .38);
+  transition: transform .12s, box-shadow .15s;
+}
+.shot:hover { transform: scale(1.06); box-shadow: 0 5px 14px rgba(47, 111, 237, .46); }
+.shot:active { transform: scale(.96); }
+.shot svg { width: 21px; height: 21px; fill: #fff; }
+
+.sep { width: 1px; height: 22px; background: rgba(15, 23, 42, .1); margin: 0 2px; }
+
+.mini {
+  width: 30px; height: 30px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: background .14s;
+}
+.mini:hover { background: rgba(15, 23, 42, .07); }
+.mini svg { width: 16px; height: 16px; fill: #646a73; }
+
+.grip {
+  width: 6px;
+  height: 26px;
+  flex: 0 0 auto;
+  margin-left: 1px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(to bottom, #c9cdd4 0 2px, transparent 2px 5px);
+  cursor: move;
+  -webkit-app-region: drag;
+}
+
+#btn-shot { cursor: pointer; }

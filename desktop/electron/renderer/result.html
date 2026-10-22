@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' file: data:;">
+  <title>识别结果</title>
+  <link rel="stylesheet" href="result.css">
+</head>
+<body>
+  <div class="card" id="card">
+    <div class="head" id="head">
+      <div class="head-left">
+        <span class="logo" id="logo"></span>
+        <span class="title">识别结果</span>
+        <span class="meta" id="meta"></span>
+      </div>
+      <div class="head-right">
+        <button class="icon-btn" id="btn-settings" title="设置">
+          <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5Zm7.4-2.1.1-1.4-.1-1.4 1.7-1.3-1.8-3.1-2 .8a7.6 7.6 0 0 0-2.4-1.4L14.5 3h-3.6l-.3 2.5A7.6 7.6 0 0 0 8.2 7l-2-.8-1.8 3.1 1.7 1.3-.1 1.4.1 1.4-1.7 1.3 1.8 3.1 2-.8a7.6 7.6 0 0 0 2.4 1.4l.3 2.5h3.6l.3-2.5a7.6 7.6 0 0 0 2.4-1.4l2 .8 1.8-3.1Z"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-close" title="关闭">
+          <svg viewBox="0 0 24 24"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3Z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="notice" id="notice" hidden>
+      <span class="notice-icon" id="notice-icon">!</span>
+      <div class="notice-body">
+        <div class="notice-title" id="notice-title"></div>
+        <div class="notice-text" id="notice-text"></div>
+      </div>
+      <button class="icon-btn small" id="notice-x">
+        <svg viewBox="0 0 24 24"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3Z"/></svg>
+      </button>
+    </div>
+
+    <div class="body">
+      <textarea id="text" spellcheck="false" placeholder="没有识别到文字"></textarea>
+    </div>
+
+    <div class="foot">
+      <button class="btn primary" id="btn-copy">
+        <svg viewBox="0 0 24 24"><path d="M9 2h9a2 2 0 0 1 2 2v12h-2V4H9Zm-4 4h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Zm0 2v12h9V8Z"/></svg>
+        复制
+      </button>
+      <button class="btn" id="btn-paste">
+        <svg viewBox="0 0 24 24"><path d="M19 2h-4.2A3 3 0 0 0 12 1a3 3 0 0 0-2.8 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm7 18H5V4h2v2h10V4h2Z"/></svg>
+        粘贴
+      </button>
+      <button class="btn" id="btn-rescan">
+        <svg viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z"/></svg>
+        重新识别
+      </button>
+      <div class="spacer"></div>
+      <span class="tip" id="tip"></span>
+    </div>
+  </div>
+  <script src="result.js"></script>
+</body>
+</html>
