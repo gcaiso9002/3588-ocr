@@ -1,7 +1,7 @@
 {
   "name": "3588-ocr",
   "productName": "3588-ocr",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "RK3588 NPU 截图取字（Electron 桌面端）",
   "main": "main.js",
   "author": "gcaiso9002",
@@ -43,10 +43,10 @@
         }
       ],
       "icon": "assets/icon.ico",
-      "artifactName": "3588-ocr.exe"
+      "artifactName": "3588-ocr-${version}.exe"
     },
     "portable": {
-      "artifactName": "3588-ocr.exe"
+      "artifactName": "3588-ocr-${version}.exe"
     },
     "compression": "maximum"
   }

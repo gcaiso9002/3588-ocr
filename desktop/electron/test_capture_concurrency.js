@@ -134,7 +134,7 @@ const fakeElectron = {
   clipboard: { writeText() { }, readText: () => '' },
   ipcMain: {
     on(channel, cb) { state.ipcHandlers.set(channel, cb); },
-    handle() { },
+    handle(channel, cb) { state.ipcHandlers.set('handle:' + channel, cb); },
   },
   session: { defaultSession: { setDisplayMediaRequestHandler() { } } },
   shell: { openExternal() { } },
@@ -331,6 +331,15 @@ async function main_test() {
   setCfg({ result_mode: undefined, keep_result_window: true });
   check('老配置 keep_result_window=true 时映射成 always',
     main.resultMode() === 'always', 'resultMode=' + main.resultMode());
+
+  console.log('\n[10] 版本号来自 package.json，不是写死的');
+  const pkgVersion = require(path.join(__dirname, 'package.json')).version;
+  const v = main.__version();
+  check('对外版本 == package.json 的 version',
+    v.version === pkgVersion, 'version=' + v.version + ' pkg=' + pkgVersion);
+  check('对外名称带版本号', v.name.indexOf('v' + pkgVersion) >= 0, 'name=' + v.name);
+  check('版本号不是占位符', !/^[–-]$/.test(v.version) && v.version !== '0.0.0',
+    'version=' + v.version);
 
   console.log('\n---- 关键日志 ----');
   for (const l of state.logLines) {

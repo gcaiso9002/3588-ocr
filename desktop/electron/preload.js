@@ -2,6 +2,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
+  // ---- 应用信息
+  version: () => ipcRenderer.invoke('app:version'),
+
   // ---- 配置
   getConfig: () => ipcRenderer.invoke('cfg:get'),
   defaults: () => ipcRenderer.invoke('cfg:defaults'),

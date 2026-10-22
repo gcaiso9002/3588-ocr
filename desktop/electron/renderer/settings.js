@@ -6,6 +6,16 @@ let cfg = null;
 let defaults = null;
 let dirty = false;
 
+/* ------------------------------------------------ 版本号 */
+
+// 版本号一律从主进程拿（= package.json 里那一个），界面上不写死
+window.api.version().then((info) => {
+  const ver = (info && info.version) || '–';
+  $('tb-ver').textContent = 'v' + ver;
+  $('ver').textContent = ver;
+  document.title = '3588-ocr v' + ver + ' 设置';
+}).catch(() => { /* 拿不到就留着占位符 */ });
+
 /* ------------------------------------------------ 导航 */
 
 document.querySelectorAll('.nav').forEach((btn) => {

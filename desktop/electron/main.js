@@ -17,6 +17,17 @@ const { execFile } = require('child_process');
 
 app.setName('3588-ocr');
 
+/** 版本号只认 package.json 里的那一处，界面上别的地方都用它 */
+const APP_VERSION = (() => {
+  try {
+    return require('./package.json').version || '0.0.0';
+  } catch (e) {
+    return app.getVersion ? app.getVersion() : '0.0.0';
+  }
+})();
+/** 界面上统一的称呼：带版本，一眼看出用的是哪一版 */
+const APP_NAME = '3588-ocr v' + APP_VERSION;
+
 const HERE = __dirname;
 const RENDERER = path.join(HERE, 'renderer');
 const ASSETS = path.join(HERE, 'assets');
@@ -316,6 +327,8 @@ function createTray() {
 function refreshTrayMenu() {
   if (!tray) return;
   const menu = Menu.buildFromTemplate([
+    { label: APP_NAME, enabled: false },
+    { type: 'separator' },
     { label: '截图取字  (' + (currentHotkey || cfg.hotkey) + ')', click: () => startCapture() },
     { type: 'separator' },
     { label: '设置...', click: () => openSettings() },
@@ -333,7 +346,7 @@ function refreshTrayMenu() {
     { label: '退出', click: () => { app.quit(); } },
   ]);
   tray.setContextMenu(menu);
-  tray.setToolTip('3588-ocr 截图取字' + (cfg.server ? '  (' + cfg.server + ')' : ''));
+  tray.setToolTip(APP_NAME + ' 截图取字' + (cfg.server ? '  (' + cfg.server + ')' : ''));
 }
 
 // ---------------------------------------------------------------- 悬浮工具条
@@ -714,6 +727,7 @@ function showResultPanel(out, absRect, autoClose) {
     lines: out.lines.length,
     elapsed: out.elapsed,
     rect: absRect,
+    version: APP_VERSION,
     autoCloseMs: autoClose ? Math.max(1, Number(cfg.result_auto_close) || 3) * 1000 : 0,
   };
   if (!resultWin || resultWin.isDestroyed()) {
@@ -795,6 +809,7 @@ function openSettings() {
     frame: false,
     backgroundColor: '#f4f5f7',
     show: false,
+    title: APP_NAME,
     icon: ICON_PNG,
     webPreferences: {
       preload: path.join(HERE, 'preload.js'),
@@ -810,6 +825,8 @@ function openSettings() {
 }
 
 // ---------------------------------------------------------------- IPC
+
+ipcMain.handle('app:version', () => ({ version: APP_VERSION, name: APP_NAME }));
 
 ipcMain.handle('cfg:get', () => cfg);
 ipcMain.handle('cfg:defaults', () => DEFAULT_CFG);
@@ -965,6 +982,8 @@ module.exports = {
   closeOverlays,
   loadConfig,
   resultMode,
+  /** 版本信息（界面上显示的就是它） */
+  __version: () => ({ version: APP_VERSION, name: APP_NAME }),
   /** 改配置（仅测试用） */
   __setCfg: (patch) => { Object.assign(cfg, patch); return cfg; },
   /** 当前内部状态，给测试断言用 */

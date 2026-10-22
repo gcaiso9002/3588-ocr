@@ -16,8 +16,7 @@ function tip(msg, kind) {
   tipTimer = setTimeout(() => { tipEl.className = 'tip'; }, 2200);
 }
 
-function showNotice(data) {
-  $('notice-title').textContent = data.title || '';
+function showNotice(data) {  $('notice-title').textContent = data.title || '';
   $('notice-text').textContent = data.message || '';
   noticeEl.className = 'notice ' + (data.kind || 'info');
   noticeEl.hidden = false;
@@ -28,6 +27,7 @@ $('notice-x').addEventListener('click', () => { noticeEl.hidden = true; });
 window.api.on('result:data', (d) => {
   textEl.value = d.text || '';
   noticeEl.hidden = true;
+  if (d.version) $('ver-tag').textContent = 'v' + d.version;
   const bits = [];
   if (d.lines) bits.push(d.lines + ' 行');
   if (d.elapsed) bits.push(d.elapsed.toFixed(2) + 's');

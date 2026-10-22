@@ -19,11 +19,17 @@
 
 | 版本 | 大小 | 说明 |
 |---|---|---|
-| [`3588-ocr.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | ~70 MB | **v1.2.4**：Electron 版，圆角结果面板 + 完整设置界面，仿天若 OCR 的观感；结果面板可设为「不弹出只进剪贴板」，选区 2 秒无操作自动撤 |
+| [`3588-ocr-1.2.5.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | ~70 MB | **v1.2.5**：Electron 版，圆角结果面板 + 完整设置界面；**文件名与界面都标版本**、结果面板可设为「不弹出只进剪贴板」、选区 2 秒无操作自动撤 |
 
 ```powershell
-irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe -o $env:USERPROFILE\Desktop\3588-ocr.exe
+irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr-1.2.5.exe -o $env:USERPROFILE\Desktop\3588-ocr-1.2.5.exe
 ```
+
+版本号在三个地方都能看到，不用猜自己在用哪一版：
+
+- **文件名**：下载下来就叫 `3588-ocr-1.2.5.exe`
+- **设置窗口**：标题栏 `3588-ocr v1.2.5` 徽标，关于页也写着版本
+- **托盘**：悬停提示和右键菜单第一行都是 `3588-ocr v1.2.5`
 
 启动后按 **Ctrl+1**，拖框，文字进剪贴板。
 板子的地址它会**自己扫出来**（本地 /24 并发探测 + 换 IP 后自动重连），不用手填。
@@ -91,7 +97,7 @@ curl http://<board>:8766/health
 不写注册表，卸载就是删文件。
 
 ```powershell
-irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe -o $env:USERPROFILE\Desktop\3588-ocr.exe
+irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr-1.2.5.exe -o $env:USERPROFILE\Desktop\3588-ocr-1.2.5.exe
 ```
 
 启动后按 **Ctrl+1**，拖框，文字进剪贴板。
