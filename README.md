@@ -19,7 +19,7 @@
 
 | 版本 | 大小 | 说明 |
 |---|---|---|
-| [`3588-ocr.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | ~70 MB | **Electron 版**：圆角结果面板 + 完整设置界面，仿天若 OCR 的观感 |
+| [`3588-ocr.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | ~70 MB | **v1.2.1**：Electron 版，圆角结果面板 + 完整设置界面，仿天若 OCR 的观感；修了「选区遮罩卡死、Esc 按不掉」的 bug |
 
 ```powershell
 irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe -o $env:USERPROFILE\Desktop\3588-ocr.exe
@@ -27,6 +27,8 @@ irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe
 
 启动后按 **Ctrl+1**，拖框，文字进剪贴板。
 板子的地址它会**自己扫出来**（本地 /24 并发探测 + 换 IP 后自动重连），不用手填。
+
+> 选区界面里：**Esc** 或**右键**取消；再按一次 **Ctrl+1** 会放弃当前选区、重新抓屏。
 
 > 板子端需要自己部署（本仓库只含代码，模型文件太大不入库），部署步骤见下面的「快速开始」。
 
@@ -63,7 +65,7 @@ irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe
 | [02-精度对齐](docs/02-精度对齐.md) | 把精度追平 CPU 的**三个坑**（末尾 Softmax / cls 拉伸 / det 几何） |
 | [03-性能优化](docs/03-性能优化.md) | 三核并行、CTC 解码、det 多核的原理与实测 |
 | [04-HTTP-API](docs/04-HTTP-API.md) | 板子上的服务接口 |
-| [05-桌面取字工具](docs/05-桌面取字工具.md) | **Windows 端客户端（Electron）**：界面、实现、构建与踩坑 |
+| [05-桌面取字工具](docs/05-桌面取字工具.md) | **Windows 端客户端（Electron）**：界面、实现、构建与踩坑，**含「选区遮罩卡死」bug 的复盘** |
 | [06-模型构建](docs/06-模型构建.md) | ONNX → RKNN 的完整流程与工具链踩坑 |
 
 ## 快速开始

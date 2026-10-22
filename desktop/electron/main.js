@@ -86,6 +86,16 @@ let settingsWin = null;
 let toolbarWin = null;
 /** @type {Map<string, BrowserWindow>} displayId -> 选区窗口 */
 const overlays = new Map();
+/**
+ * 所有曾经创建过的选区窗口。
+ * overlays 是 Map，只留每个屏幕的最后一个；一旦并发创建出多余窗口，
+ * 它们就会从 Map 里掉出去、变成关不掉的野窗口（十字光标卡死）。
+ * 这里额外用 Set 兜底，closeOverlays() 会把它们全部销毁。
+ * @type {Set<BrowserWindow>}
+ */
+const overlayWins = new Set();
+/** 正在抓屏（await 中），用于防止连按热键导致并发抓屏 */
+let capturing = false;
 let lastFgHwnd = null;        // 截图前的前台窗口句柄
 let lastResult = null;        // { text, lines, elapsed, rect }
 
@@ -354,8 +364,19 @@ function createToolbar() {
 
 // ---------------------------------------------------------------- 选区遮罩
 
+/** 清理本次抓屏没用到的旧临时图（文件名带 token） */
+function cleanShots(keepToken) {
+  let names = [];
+  try { names = fs.readdirSync(SHOT_DIR); } catch (e) { return; }
+  for (const n of names) {
+    if (!n.startsWith('shot-') || !n.endsWith('.png')) continue;
+    if (keepToken && n.indexOf(keepToken) >= 0) continue;
+    try { fs.unlinkSync(path.join(SHOT_DIR, n)); } catch (e) { /* ignore */ }
+  }
+}
+
 /** 每块屏取一次，保证缩略图是 1:1 物理像素 */
-async function captureDisplays() {
+async function captureDisplays(token) {
   const displays = screen.getAllDisplays();
   fs.mkdirSync(SHOT_DIR, { recursive: true });
   const shots = [];
@@ -370,10 +391,12 @@ async function captureDisplays() {
     let src = sources.find((s) => String(s.display_id) === String(d.id));
     if (!src) src = sources.find((s) => s.thumbnail && !s.thumbnail.isEmpty());
     if (!src) continue;
-    const file = path.join(SHOT_DIR, 'shot-' + d.id + '.png');
+    // 文件名带本次抓屏的 token：万一还是并发跑起来了，也不会互相覆盖
+    const file = path.join(SHOT_DIR, 'shot-' + token + '-' + d.id + '.png');
     fs.writeFileSync(file, src.thumbnail.toPNG());
     shots.push({ display: d, file });
   }
+  cleanShots(token);
   return shots;
 }
 
@@ -388,8 +411,45 @@ function rememberForeground() {
   });
 }
 
+/** 选区期间注册的系统级 Esc：即使遮罩窗口丢了键盘焦点也能取消 */
+let escShortcut = null;
+
+function armEscShortcut() {
+  if (escShortcut) return;
+  try {
+    escShortcut = globalShortcut.register('Escape', () => {
+      if (overlays.size || overlayWins.size) {
+        log('esc pressed -> cancel selection');
+        closeOverlays('global-esc');
+      }
+    });
+    if (!escShortcut) log('warn: global Escape shortcut not registered');
+  } catch (e) {
+    log('warn: global Escape shortcut failed: ' + e);
+  }
+}
+
+function disarmEscShortcut() {
+  if (!escShortcut) return;
+  try { globalShortcut.unregister('Escape'); } catch (e) { /* ignore */ }
+  escShortcut = null;
+}
+
 async function startCapture() {
-  if (overlays.size) return;              // 已经在选区中
+  // 抓屏本身要 2 秒（双屏各抓一次），这段时间里连按热键会并发跑出多套遮罩，
+  // 多出来的窗口从 overlays Map 里掉出去、变成关不掉的野窗口 —— 十字光标就卡死了。
+  if (capturing) {
+    log('capture ignored: a capture is already in progress');
+    return;
+  }
+  if (overlays.size || overlayWins.size) {
+    // 选区中再按一次热键 = 放弃当前选区、重新抓一次屏。
+    // 这既是「想换个区域重选」，也是遮罩卡住时的兜底出口。
+    log('capture restarted: closing current selection first');
+    closeOverlays('restart');
+  }
+  capturing = true;
+  const token = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
   log('capture start, displays=' + screen.getAllDisplays().length);
   log('displays: ' + JSON.stringify(screen.getAllDisplays().map((d) => ({
     id: d.id, bounds: d.bounds, scale: d.scaleFactor, rot: d.rotation,
@@ -398,18 +458,21 @@ async function startCapture() {
   rememberForeground();
   let shots;
   try {
-    shots = await captureDisplays();
+    shots = await captureDisplays(token);
   } catch (e) {
     log('capture failed: ' + e);
     showResult({ title: '截图失败', message: String(e), kind: 'error' });
+    capturing = false;
     return;
   }
+  capturing = false;
   if (!shots.length) {
     log('capture produced no image');
     showResult({ title: '截图失败', message: '没有取到屏幕画面。', kind: 'error' });
     return;
   }
   log('captured ' + shots.length + ' display(s)');
+  closeOverlays('stale');   // 万一还有残留，先清干净
   for (const s of shots) {
     const id = String(s.display.id);
     const win = new BrowserWindow({
@@ -439,7 +502,9 @@ async function startCapture() {
     win.setAlwaysOnTop(true, 'screen-saver');
     win.loadFile(path.join(RENDERER, 'overlay.html'));
     overlays.set(id, win);
+    overlayWins.add(win);
     win.webContents.once('did-finish-load', () => {
+      if (win.isDestroyed()) return;
       win.webContents.send('overlay:init', {
         displayId: id,
         shot: 'file:///' + s.file.replace(/\\/g, '/'),
@@ -450,8 +515,14 @@ async function startCapture() {
       });
       win.show();
     });
-    win.on('closed', () => { overlays.delete(id); });
+    win.on('closed', () => {
+      overlayWins.delete(win);
+      // 只有 Map 里还指着这个窗口时才删，避免把后来的窗口误删
+      if (overlays.get(id) === win) overlays.delete(id);
+    });
   }
+  armEscShortcut();
+  log('overlays up: ' + overlayWins.size + ' window(s)');
   // 全部窗口加载完再让它们接管鼠标
   await new Promise((r) => setTimeout(r, 260));
   for (const [id, win] of overlays) {
@@ -461,17 +532,25 @@ async function startCapture() {
   }
 }
 
-function closeOverlays() {
+function closeOverlays(reason) {
+  const n = overlayWins.size;
+  // 用 overlayWins 全量销毁：只遍历 overlays 会漏掉并发创建出来的野窗口
+  for (const win of Array.from(overlayWins)) {
+    try { win.destroy(); } catch (e) { /* ignore */ }
+  }
   for (const win of Array.from(overlays.values())) {
     try { win.destroy(); } catch (e) { /* ignore */ }
   }
+  overlayWins.clear();
   overlays.clear();
+  disarmEscShortcut();
+  log('overlays closed: ' + n + ' window(s) [' + (reason || '?') + ']');
 }
 
 async function onRegionSelected(payload) {
   const { dataUrl, rect, displayId } = payload || {};
   log('region selected: ' + JSON.stringify(rect) + ' bytes=' + (dataUrl ? dataUrl.length : 0));
-  closeOverlays();
+  closeOverlays('select');
   if (!dataUrl) return;
   let pngBuffer;
   try {
@@ -682,7 +761,7 @@ ipcMain.on('result:close', () => { if (resultWin) resultWin.hide(); });
 ipcMain.on('result:open-settings', () => openSettings());
 
 ipcMain.on('overlay:select', (_e, payload) => { onRegionSelected(payload); });
-ipcMain.on('overlay:cancel', () => { closeOverlays(); });
+ipcMain.on('overlay:cancel', () => { closeOverlays('cancel'); });
 
 ipcMain.on('toolbar:capture', () => startCapture());
 ipcMain.on('toolbar:settings', () => openSettings());
@@ -741,6 +820,18 @@ if (!gotLock) {
     createTray();
     registerHotkey(cfg.hotkey, false);   // 被占用时明确告诉用户换成了哪个键
     createToolbar();
+
+    // 自愈：定期扫一遍，把任何「不在册」的选区窗口直接销毁。
+    // 野窗口一旦漏网就会一直盖在屏幕上层，十字光标卡死且 Esc 也关不掉。
+    setInterval(() => {
+      for (const w of BrowserWindow.getAllWindows()) {
+        if (w.isDestroyed()) continue;
+        if (w.getTitle() !== '选区') continue;
+        if (overlayWins.has(w)) continue;
+        log('self-heal: destroying orphan overlay window');
+        try { w.destroy(); } catch (e) { /* ignore */ }
+      }
+    }, 2000);
 
     // 后台预取：先把板子找出来
     discoverServer().then((hit) => {

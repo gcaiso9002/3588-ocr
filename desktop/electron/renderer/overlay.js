@@ -196,4 +196,8 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-window.addEventListener('contextmenu', (e) => e.preventDefault());
+// 右键 = 取消（多一个兜底出口，万一 Esc 被别的窗口吃掉）
+window.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  if (!busy) window.api.send('overlay:cancel');
+});

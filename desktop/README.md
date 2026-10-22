@@ -31,6 +31,7 @@ irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe
 * 不写注册表、不写 `Program Files`，卸载 = 删 exe + 删 `%APPDATA%\3588-ocr`
 * 板子地址它会**自己扫出来**（本地 /24 并发探测 + 换 IP 后自动重连），不用手填
 * 按 **Ctrl+1** 框选 → 出字 → 进剪贴板
+* 选区界面里 **Esc / 右键** 取消，再按一次 **Ctrl+1** 放弃当前选区、重新抓屏
 
 ## 命令行 API 客户端
 
