@@ -144,6 +144,31 @@ function crop(r) {
   return c.toDataURL('image/png');
 }
 
+// ---- 空闲保活 -------------------------------------------------
+// 主进程那边有个「选区多久没动静就自动取消」的计时器。
+// 用户在遮罩上的一举一动都要报过去，计时器才会重新开始。
+let lastActivityAt = 0;
+let dragHeartbeat = null;
+
+function reportActivity() {
+  const now = Date.now();
+  if (now - lastActivityAt < 100) return;   // 节流，别把 IPC 打爆
+  lastActivityAt = now;
+  window.api.send('overlay:activity');
+}
+
+function startDragHeartbeat() {
+  if (dragHeartbeat) return;
+  // 拖拽过程中鼠标可能停住不动，这时也要保证计时器别把遮罩收走
+  dragHeartbeat = setInterval(() => window.api.send('overlay:activity'), 400);
+}
+
+function stopDragHeartbeat() {
+  if (!dragHeartbeat) return;
+  clearInterval(dragHeartbeat);
+  dragHeartbeat = null;
+}
+
 document.addEventListener('mousedown', (e) => {
   if (!state.armed || !state.ready || busy || e.button !== 0) return;
   e.preventDefault();
@@ -151,11 +176,14 @@ document.addEventListener('mousedown', (e) => {
   cur = { x: e.clientX, y: e.clientY };
   dragging = true;
   hint.style.display = 'none';
+  reportActivity();
+  startDragHeartbeat();
   paint();
   paintMagnifier();
 });
 
 document.addEventListener('mousemove', (e) => {
+  reportActivity();
   if (!dragging) return;
   cur = { x: e.clientX, y: e.clientY };
   paint();
@@ -165,6 +193,7 @@ document.addEventListener('mousemove', (e) => {
 document.addEventListener('mouseup', (e) => {
   if (!dragging || busy || e.button !== 0) return;
   dragging = false;
+  stopDragHeartbeat();
   cur = { x: e.clientX, y: e.clientY };
   const r = rect();
   if (r.w < 8 || r.h < 8) {
@@ -190,6 +219,7 @@ document.addEventListener('mouseup', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+  reportActivity();
   if (e.key === 'Escape') {
     e.preventDefault();
     window.api.send('overlay:cancel');

@@ -43,6 +43,7 @@ const DEFAULT_CFG = {
   show_toolbar: true,
   start_minimized: true,
   ocr_timeout: 60,
+  select_idle_timeout: 2,      // 选区界面多久没动静就自动取消（秒），0 = 不自动取消
 };
 
 let cfg = { ...DEFAULT_CFG };
@@ -282,7 +283,13 @@ function registerHotkey(spec, quiet) {
   return { ok: false, hotkey: null };
 }
 
+let lastHotkeyAt = 0;
+
 function onHotkey() {
+  const now = Date.now();
+  // 防抖：按住热键不放时系统会连发，这里只认「人按了一下」
+  if (now - lastHotkeyAt < 250) return;
+  lastHotkeyAt = now;
   log('hotkey pressed');
   startCapture();
 }
@@ -431,6 +438,40 @@ function rememberForeground() {
 /** 选区期间注册的系统级 Esc：即使遮罩窗口丢了键盘焦点也能取消 */
 let escShortcut = null;
 
+/**
+ * 选区空闲超时（天若式交互）：
+ *   选区界面弹出来之后，如果用户一直没有任何动作（鼠标没动、没按键），
+ *   就自动把遮罩撤掉，屏幕恢复正常，程序回到「等下一次热键」的状态。
+ *   任何一点动作（哪怕只是挪一下鼠标）都会重新计时。
+ *   在超时之前再按一次热键，则作废当前这次、重新抓一次新的。
+ */
+let idleTimer = null;
+let restartPending = false;     // 抓屏途中又按了一次 -> 这次的结果作废，重来
+
+function idleTimeoutMs() {
+  const s = Number(cfg.select_idle_timeout);
+  if (!isFinite(s) || s <= 0) return 0;     // 0 = 不自动取消
+  return Math.round(s * 1000);
+}
+
+function clearIdleTimer() {
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+}
+
+/** 重置空闲计时；用户在遮罩上有任何动作就调它 */
+function resetIdleTimer() {
+  clearIdleTimer();
+  const ms = idleTimeoutMs();
+  if (!ms) return;
+  if (!overlays.size) return;
+  idleTimer = setTimeout(() => {
+    idleTimer = null;
+    if (!overlays.size) return;
+    log('idle ' + ms + 'ms -> cancel selection');
+    closeOverlays('idle-timeout');
+  }, ms);
+}
+
 function armEscShortcut() {
   if (escShortcut) return;
   try {
@@ -456,7 +497,9 @@ async function startCapture() {
   // 抓屏本身要 2 秒（双屏各抓一次），这段时间里连按热键会并发跑出多套遮罩，
   // 多出来的窗口从 overlays Map 里掉出去、变成关不掉的野窗口 —— 十字光标就卡死了。
   if (capturing) {
-    log('capture ignored: a capture is already in progress');
+    // 这不是「忽略」，而是「更新的按键赢了」：这次抓完直接作废，重新抓一次。
+    log('capture in progress -> mark restart pending');
+    restartPending = true;
     return;
   }
   if (overlays.size || overlayWins.size) {
@@ -486,6 +529,13 @@ async function startCapture() {
   if (!shots.length) {
     log('capture produced no image');
     showResult({ title: '截图失败', message: '没有取到屏幕画面。', kind: 'error' });
+    return;
+  }
+  // 抓屏途中又按了一次热键 -> 这次的结果作废，直接重抓（最新的按键赢）
+  if (restartPending) {
+    restartPending = false;
+    log('restart pending -> discard this capture and grab again');
+    startCapture();
     return;
   }
   log('captured ' + shots.length + ' display(s)');
@@ -547,10 +597,13 @@ async function startCapture() {
     win.focus();
     win.webContents.send('overlay:armed', { displayId: id });
   }
+  // 开始空闲计时：这么久没人动就自动撤掉遮罩，等下一次热键
+  resetIdleTimer();
 }
 
 function closeOverlays(reason) {
   const n = overlayWins.size;
+  clearIdleTimer();
   // 用 overlayWins 全量销毁：只遍历 overlays 会漏掉并发创建出来的野窗口
   for (const win of Array.from(overlayWins)) {
     try { win.destroy(); } catch (e) { /* ignore */ }
@@ -779,6 +832,8 @@ ipcMain.on('result:open-settings', () => openSettings());
 
 ipcMain.on('overlay:select', (_e, payload) => { onRegionSelected(payload); });
 ipcMain.on('overlay:cancel', () => { closeOverlays('cancel'); });
+// 遮罩上有任何动作（挪鼠标、按键、开始拖拽）-> 重新计时
+ipcMain.on('overlay:activity', () => { resetIdleTimer(); });
 
 ipcMain.on('toolbar:capture', () => startCapture());
 ipcMain.on('toolbar:settings', () => openSettings());
@@ -882,12 +937,14 @@ if (!gotLock) {
 module.exports = {
   startCapture,
   closeOverlays,
+  loadConfig,
   /** 当前内部状态，给测试断言用 */
   __state: () => ({
     overlays: overlays.size,
     overlayWins: overlayWins.size,
     capturing,
     escArmed: !!escShortcut,
+    idleTimeoutMs: idleTimeoutMs(),
   }),
 };
 

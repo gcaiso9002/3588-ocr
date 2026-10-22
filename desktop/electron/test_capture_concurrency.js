@@ -19,6 +19,7 @@
  */
 const Module = require('module');
 const path = require('path');
+const fs = require('fs');
 const assert = require('assert');
 
 // ---------------------------------------------------------------- 假的 electron
@@ -26,6 +27,8 @@ const assert = require('assert');
 const state = {
   windows: [],            // 所有建过的 BrowserWindow
   getSourcesCalls: 0,
+  inFlight: 0,            // 同时在跑的 getSources 数
+  maxInFlight: 0,
   shortcuts: new Map(),   // accelerator -> callback
   ipcHandlers: new Map(),
   logLines: [],
@@ -116,8 +119,11 @@ const fakeElectron = {
   desktopCapturer: {
     async getSources(opts) {
       state.getSourcesCalls++;
+      state.inFlight++;
+      if (state.inFlight > state.maxInFlight) state.maxInFlight = state.inFlight;
       // 模拟真实抓屏的耗时（真机上双屏约 1~2 秒）
       await new Promise((r) => setTimeout(r, opts.__delay || 120));
+      state.inFlight--;
       return DISPLAYS.map((d) => ({
         display_id: String(d.id),
         thumbnail: { toPNG: () => Buffer.from('fake-png-' + d.id), isEmpty: () => false },
@@ -142,8 +148,18 @@ Module._load = function (request, parent, isMain) {
   return origLoad.apply(this, arguments);
 };
 
-// 屏蔽日志落盘，避免污染用户的 %APPDATA%
-const fs = require('fs');
+// 把 %APPDATA% 指向临时目录：
+//   1) 不碰用户真实的 config.json / 日志
+//   2) 可以往里写一份「选区空闲超时 = 0.3 秒」的配置，让测试跑得快
+const TMP_APPDATA = path.join(require('os').tmpdir(), '3588-ocr-test-' + process.pid);
+process.env.APPDATA = TMP_APPDATA;
+fs.mkdirSync(path.join(TMP_APPDATA, '3588-ocr'), { recursive: true });
+fs.writeFileSync(
+  path.join(TMP_APPDATA, '3588-ocr', 'config.json'),
+  JSON.stringify({ select_idle_timeout: 0.3 }, null, 2), 'utf8');
+const IDLE_MS = 300;
+
+// 屏蔽日志落盘，避免污染任何真实目录
 const origAppend = fs.appendFileSync;
 fs.appendFileSync = function (file, data, enc) {
   if (String(file).indexOf('3588-ocr.log') >= 0) {
@@ -154,6 +170,7 @@ fs.appendFileSync = function (file, data, enc) {
 };
 
 const main = require(process.argv[2] || path.join(__dirname, 'main.js'));
+main.loadConfig();          // 读上面那份临时配置（空闲超时 0.3 秒）
 
 // ---------------------------------------------------------------- 断言工具
 
@@ -185,6 +202,7 @@ function orphanOverlays() {
 async function main_test() {
   console.log('\n[1] 抓屏期间连按 3 次热键');
   state.getSourcesCalls = 0;
+  state.maxInFlight = 0;
   state.windows.length = 0;
 
   // 模拟热键连按：startCapture 是 async，前一次还没 await 完就再调
@@ -197,14 +215,16 @@ async function main_test() {
   await sleep(120);
 
   const st = main.__state();
-  check('只发起了一次抓屏（并发被拦下）',
-    state.getSourcesCalls === DISPLAYS.length,
-    'getSources 调用=' + state.getSourcesCalls + '（每屏一次 = ' + DISPLAYS.length + '）');
+  check('抓屏没有并发（同时最多跑一轮）',
+    state.maxInFlight <= DISPLAYS.length,
+    '同时在跑的 getSources 最多 ' + state.maxInFlight + '（一轮 = ' + DISPLAYS.length + '）');
   check('遮罩窗口数 == 屏幕数', st.overlayWins === DISPLAYS.length,
     'overlayWins=' + st.overlayWins);
   check('没有野窗口', orphanOverlays() === DISPLAYS.length,
     '存活遮罩=' + orphanOverlays());
   check('Escape 全局快捷键已注册', st.escArmed === true);
+  check('空闲超时已按配置生效', st.idleTimeoutMs === IDLE_MS,
+    'idleTimeoutMs=' + st.idleTimeoutMs + ' 期望=' + IDLE_MS);
 
   console.log('\n[2] 按 Escape 关闭');
   const escCb = state.shortcuts.get('Escape');
@@ -247,6 +267,50 @@ async function main_test() {
   await sleep(50);
   check('全部销毁', liveOverlays() === 0, '存活遮罩=' + liveOverlays());
   check('状态归零', main.__state().overlayWins === 0);
+
+  console.log('\n[6] 选区无操作 -> 自动撤掉遮罩，回到等待下一次');
+  await main.startCapture();
+  // startCapture 返回时遮罩已经 armed、计时器刚开始，所以要马上看
+  check('已进入选区', main.__state().overlayWins === DISPLAYS.length,
+    'overlayWins=' + main.__state().overlayWins);
+  await sleep(IDLE_MS + 300);      // 一动不动地等着
+  check('超时后遮罩自动消失', main.__state().overlayWins === 0,
+    'overlayWins=' + main.__state().overlayWins);
+  check('超时后没有残留窗口', liveOverlays() === 0, '存活遮罩=' + liveOverlays());
+
+  console.log('\n[7] 选区中有动作 -> 计时器重置，不会被自动撤掉');
+  await main.startCapture();
+  check('已进入选区', main.__state().overlayWins === DISPLAYS.length,
+    'overlayWins=' + main.__state().overlayWins);
+  const activity = state.ipcHandlers.get('overlay:activity');
+  check('渲染层有 activity 通道', typeof activity === 'function');
+  // 每隔一段时间报一次活动，总时长超过超时阈值
+  for (let i = 0; i < 8; i++) {
+    if (activity) activity();
+    await sleep(IDLE_MS / 4);
+  }
+  check('有活动时遮罩还在', main.__state().overlayWins === DISPLAYS.length,
+    'overlayWins=' + main.__state().overlayWins);
+  main.closeOverlays('test');
+  await sleep(50);
+
+  console.log('\n[8] 抓屏途中再按一次 -> 这次作废，重新抓（最新的按键赢）');
+  state.getSourcesCalls = 0;
+  const p = main.startCapture();
+  await sleep(40);
+  main.startCapture();               // 抓屏途中再按
+  await sleep(20);
+  main.startCapture();               // 再按一次
+  await p;
+  await sleep(400);
+  const st8 = main.__state();
+  check('最终只留下一套遮罩', st8.overlayWins === DISPLAYS.length,
+    'overlayWins=' + st8.overlayWins);
+  check('抓屏被重启过（次数 > 一轮）', state.getSourcesCalls > DISPLAYS.length,
+    'getSources=' + state.getSourcesCalls);
+  check('重启后没有野窗口', orphanOverlays() === DISPLAYS.length,
+    '存活遮罩=' + orphanOverlays());
+  main.closeOverlays('test');
 
   console.log('\n---- 关键日志 ----');
   for (const l of state.logLines) {

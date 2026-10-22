@@ -33,6 +33,7 @@ function readForm() {
     trim_spaces: $('trim_spaces').checked,
     magnifier: $('magnifier').checked,
     ocr_timeout: parseInt($('ocr_timeout').value, 10) || 60,
+    select_idle_timeout: Math.max(0, parseInt($('select_idle_timeout').value, 10) || 0),
   };
 }
 
@@ -49,6 +50,7 @@ function fillForm(c) {
   $('trim_spaces').checked = !!c.trim_spaces;
   $('magnifier').checked = !!c.magnifier;
   $('ocr_timeout').value = c.ocr_timeout || 60;
+  $('select_idle_timeout').value = (c.select_idle_timeout === undefined ? 2 : c.select_idle_timeout);
 }
 
 /* ------------------------------------------------ 脏标记 */

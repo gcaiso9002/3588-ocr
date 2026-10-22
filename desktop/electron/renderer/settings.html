@@ -145,6 +145,17 @@
           <div class="card">
             <div class="card-title">截图</div>
             <label class="check"><input type="checkbox" id="magnifier"><span>框选时显示放大镜</span></label>
+            <div class="row">
+              <label class="lbl">选区无操作自动取消</label>
+              <div class="ctl">
+                <input id="select_idle_timeout" type="number" min="0" max="60" step="1" style="width:110px">
+                <span class="unit">秒</span>
+              </div>
+              <span class="hint">
+                选区界面弹出来后，这么久没动静（鼠标没动、没按键）就自动撤掉遮罩，回到等待下一次热键；
+                挪一下鼠标就重新计时。填 0 = 不自动取消。
+              </span>
+            </div>
           </div>
 
           <div class="card">
