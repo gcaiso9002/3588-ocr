@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""Self-check: auto-discover the board on the LAN.
+
+!!! WARNING !!!
+This script will pop up a fullscreen mask on the CURRENT desktop,
+covering everything you're working on. Save your work before running it.
+If you just want to verify the concurrency logic, use the headless version instead (no popups):
+    node test_capture_concurrency.js
+"""
+
 """Auto-discovery test: point the config at a dead address, expect the app to
 find the board on its own and write the working address back.
 

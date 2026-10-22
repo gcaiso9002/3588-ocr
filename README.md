@@ -19,7 +19,7 @@
 
 | 版本 | 大小 | 说明 |
 |---|---|---|
-| [`3588-ocr.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | ~70 MB | **v1.2.1**：Electron 版，圆角结果面板 + 完整设置界面，仿天若 OCR 的观感；修了「选区遮罩卡死、Esc 按不掉」的 bug |
+| [`3588-ocr.exe`](https://github.com/gcaiso9002/3588-ocr/releases/latest) | ~70 MB | **v1.2.2**：Electron 版，圆角结果面板 + 完整设置界面，仿天若 OCR 的观感；修了「选区遮罩卡死、Esc 按不掉」，双屏抓屏提速约 1.5 倍 |
 
 ```powershell
 irm https://github.com/gcaiso9002/3588-ocr/releases/latest/download/3588-ocr.exe -o $env:USERPROFILE\Desktop\3588-ocr.exe

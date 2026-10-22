@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""A/B compare: v1.2.0 (buggy) vs v1.2.1 (fixed).
+
+!!! WARNING !!!
+This script will pop up a fullscreen mask on the CURRENT desktop,
+covering everything you're working on. Save your work before running it.
+If you just want to verify the concurrency logic, use the headless version instead (no popups):
+    node test_capture_concurrency.js
+"""
+
 """A/B 对比：v1.2.0（旧）vs v1.2.1（新）在「抓屏期间连按热键」下的表现。
 
 判据：**"overlay: image drawn" 的条数**。

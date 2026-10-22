@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""End-to-end test of the Electron client: Ctrl+1 -> drag -> clipboard.
+
+!!! WARNING !!!
+This script will pop up a fullscreen mask on the CURRENT desktop,
+covering everything you're working on. Save your work before running it.
+If you just want to verify the concurrency logic, use the headless version instead (no popups):
+    node test_capture_concurrency.js
+"""
+
 """End-to-end test of the Electron client: Ctrl+1 -> drag -> clipboard.
 
 The driver must be DPI aware, otherwise SetCursorPos coordinates get

@@ -379,23 +379,40 @@ function cleanShots(keepToken) {
 async function captureDisplays(token) {
   const displays = screen.getAllDisplays();
   fs.mkdirSync(SHOT_DIR, { recursive: true });
-  const shots = [];
-  for (const d of displays) {
+  const t0 = Date.now();
+
+  // 每块屏各取一次，保证缩略图是 1:1 物理像素。
+  // 关键是这几次 getSources 必须【并行】发：串行的话双屏要等两倍时间，
+  // 用户按完热键要干等两秒才看到选区界面，于是会忍不住连按 —— 那正是
+  // v1.2.0 并发抓屏 bug 的触发条件。
+  const grabbed = await Promise.all(displays.map(async (d) => {
     const pw = Math.max(1, Math.round(d.bounds.width * d.scaleFactor));
     const ph = Math.max(1, Math.round(d.bounds.height * d.scaleFactor));
+    const t1 = Date.now();
     const sources = await desktopCapturer.getSources({
       types: ['screen'],
       thumbnailSize: { width: pw, height: ph },
       fetchWindowIcons: false,
     });
+    const t2 = Date.now();
     let src = sources.find((s) => String(s.display_id) === String(d.id));
     if (!src) src = sources.find((s) => s.thumbnail && !s.thumbnail.isEmpty());
-    if (!src) continue;
+    if (!src) return null;
+    const buf = src.thumbnail.toPNG();
+    return { display: d, buf, getMs: t2 - t1, pngMs: Date.now() - t2 };
+  }));
+
+  const shots = [];
+  for (const g of grabbed) {
+    if (!g) continue;
     // 文件名带本次抓屏的 token：万一还是并发跑起来了，也不会互相覆盖
-    const file = path.join(SHOT_DIR, 'shot-' + token + '-' + d.id + '.png');
-    fs.writeFileSync(file, src.thumbnail.toPNG());
-    shots.push({ display: d, file });
+    const file = path.join(SHOT_DIR, 'shot-' + token + '-' + g.display.id + '.png');
+    fs.writeFileSync(file, g.buf);
+    shots.push({ display: g.display, file });
+    log('  grab display ' + g.display.id + ': getSources ' + g.getMs
+      + 'ms, png ' + g.pngMs + 'ms');
   }
+  log('capture displays done in ' + (Date.now() - t0) + 'ms');
   cleanShots(token);
   return shots;
 }
@@ -855,3 +872,22 @@ if (!gotLock) {
     globalShortcut.unregisterAll();
   });
 }
+
+// ---------------------------------------------------------------- 测试口
+//
+// 暴露给无 GUI 的回归测试（test_capture_concurrency.js）：
+// 它用假的 electron 模块加载本文件，在毫秒级反复压测「抓屏期间重复触发」
+// 这条并发路径，全程不弹窗、不占屏幕。
+// 正常运行时这些导出没人用。
+module.exports = {
+  startCapture,
+  closeOverlays,
+  /** 当前内部状态，给测试断言用 */
+  __state: () => ({
+    overlays: overlays.size,
+    overlayWins: overlayWins.size,
+    capturing,
+    escArmed: !!escShortcut,
+  }),
+};
+

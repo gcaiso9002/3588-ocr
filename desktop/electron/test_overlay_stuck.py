@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""Regression test: selection mask gets stuck (hotkey pressed repeatedly during capture).
+
+!!! WARNING !!!
+This script will pop up a fullscreen mask on the CURRENT desktop,
+covering everything you're working on. Save your work before running it.
+If you just want to verify the concurrency logic, use the headless version instead (no popups):
+    node test_capture_concurrency.js
+"""
+
 """回归测试：选区遮罩卡死（抓屏期间重复触发热键）。
 
 真实故障（v1.2.0）：
