@@ -31,6 +31,8 @@ const state = {
   maxInFlight: 0,
   shortcuts: new Map(),   // accelerator -> callback
   ipcHandlers: new Map(),
+  appHandlers: new Map(), // app.on(...)
+  trayHandlers: new Map(),// tray.on(...)
   logLines: [],
 };
 
@@ -94,7 +96,7 @@ const fakeElectron = {
     isPackaged: false,
     // 永不 resolve：避免启动托盘/工具条/网络探测这些副作用
     whenReady: () => new Promise(() => { }),
-    on() { },
+    on(evt, cb) { state.appHandlers.set(evt, cb); },
     quit() { },
     exit() { },
     requestSingleInstanceLock: () => true,
@@ -103,7 +105,14 @@ const fakeElectron = {
     commandLine: { appendSwitch() { } },
   },
   BrowserWindow: FakeBrowserWindow,
-  Tray: class { constructor() { } setToolTip() { } setContextMenu() { } on() { } destroy() { } },
+  Tray: class {
+    constructor() { this.destroyed = false; }
+    setToolTip() { }
+    setContextMenu() { }
+    popUpContextMenu() { state.trayMenuPopped = (state.trayMenuPopped || 0) + 1; }
+    on(evt, cb) { state.trayHandlers.set(evt, cb); }
+    destroy() { this.destroyed = true; }
+  },
   Menu: { buildFromTemplate: () => ({}) },
   globalShortcut: {
     register(accelerator, cb) { state.shortcuts.set(accelerator, cb); return true; },
@@ -340,6 +349,34 @@ async function main_test() {
   check('对外名称带版本号', v.name.indexOf('v' + pkgVersion) >= 0, 'name=' + v.name);
   check('版本号不是占位符', !/^[–-]$/.test(v.version) && v.version !== '0.0.0',
     'version=' + v.version);
+
+  console.log('\n[11] 只有快捷键/明确的按钮能触发截图（点软件本身不算）');
+  // 双击 exe（程序已在跑）-> second-instance -> 绝不能开始截图
+  const before = state.getSourcesCalls;
+  const secondCb = state.appHandlers.get('second-instance');
+  check('注册了 second-instance 处理', typeof secondCb === 'function');
+  if (secondCb) secondCb();
+  await sleep(300);
+  check('再双击一次 exe 不会触发截图',
+    state.getSourcesCalls === before,
+    'getSources ' + before + ' -> ' + state.getSourcesCalls);
+  check('再双击一次 exe 会打开设置窗口',
+    state.windows.some((w) => String(w.loadedFile || '').indexOf('settings.html') >= 0),
+    'settings windows=' + state.windows.filter((w) => String(w.loadedFile || '').indexOf('settings.html') >= 0).length);
+
+  // 点托盘图标 -> 弹菜单，绝不截图
+  main.__createTray();          // whenReady 在测试里永不 resolve，手动建一下
+  await sleep(50);
+  const beforeTray = state.getSourcesCalls;
+  const trayClick = state.trayHandlers.get('click');
+  check('注册了托盘 click 处理', typeof trayClick === 'function');
+  if (trayClick) trayClick();
+  await sleep(300);
+  check('点托盘图标不会触发截图',
+    state.getSourcesCalls === beforeTray,
+    'getSources ' + beforeTray + ' -> ' + state.getSourcesCalls);
+  check('点托盘图标弹出菜单', (state.trayMenuPopped || 0) >= 1,
+    'menuPopped=' + (state.trayMenuPopped || 0));
 
   console.log('\n---- 关键日志 ----');
   for (const l of state.logLines) {

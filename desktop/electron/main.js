@@ -320,7 +320,9 @@ function createTray() {
   if (tray && !tray.isDestroyed()) tray.destroy();
   tray = new Tray(trayIcon());
   refreshTrayMenu();
-  tray.on('click', () => startCapture());
+  // 单击托盘 = 弹菜单（Windows 惯例），绝不自动截图；
+  // 双击 = 打开设置。截图只留给快捷键和菜单里那一条。
+  tray.on('click', () => { if (tray) tray.popUpContextMenu(); });
   tray.on('double-click', () => openSettings());
 }
 
@@ -908,8 +910,11 @@ if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (settingsWin) { settingsWin.show(); settingsWin.focus(); }
-    else startCapture();
+    // 又双击了一次 exe。这时程序已经在跑，用户的意思通常是「我只是想打开它」，
+    // 不是「给我截个图」—— 所以这里绝不触发截图，只把界面亮出来。
+    // 截图一律只由快捷键（或工具条上那个明确的截图按钮）发起。
+    log('second instance launched -> bring up settings, no capture');
+    openSettings();
   });
 
   app.whenReady().then(async () => {
@@ -984,6 +989,8 @@ module.exports = {
   resultMode,
   /** 版本信息（界面上显示的就是它） */
   __version: () => ({ version: APP_VERSION, name: APP_NAME }),
+  /** 建托盘（正常由 whenReady 调，测试时手动调一下） */
+  __createTray: createTray,
   /** 改配置（仅测试用） */
   __setCfg: (patch) => { Object.assign(cfg, patch); return cfg; },
   /** 当前内部状态，给测试断言用 */
